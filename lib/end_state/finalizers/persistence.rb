@@ -1,6 +1,6 @@
 module EndState
   module Finalizers
-    class Persistence < Finalizer
+    class Persistence < EndState::Finalizer
       def call
         return false unless object.respond_to? :save
         !!(object.save)
