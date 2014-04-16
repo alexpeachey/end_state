@@ -25,6 +25,27 @@ module EndState
       end
     end
 
+    describe '.state_attribute' do
+      context 'when set to :foobar' do
+        let(:object) { OpenStruct.new(foobar: :a) }
+        before { StateMachine.state_attribute :foobar }
+
+        it 'answers state with foobar' do
+          expect(machine.state).to eq object.foobar
+        end
+
+        it 'answers state= with foobar=' do
+          machine.state = :b
+          expect(object.foobar).to eq :b
+        end
+
+        after do
+          StateMachine.send(:remove_method, :state)
+          StateMachine.send(:remove_method, :state=)
+        end
+      end
+    end
+
     describe '.states' do
       before do
         StateMachine.transition(a: :b)
@@ -99,10 +120,34 @@ module EndState
       end
     end
 
+    describe '#can_transition?' do
+      let(:object) { OpenStruct.new(state: :a) }
+      before do
+        StateMachine.transition a: :b
+        StateMachine.transition b: :c
+      end
+
+      context 'when asking about an allowed transition' do
+        specify { expect(machine.can_transition? :b).to be_true }
+      end
+
+      context 'when asking about a disallowed transition' do
+        specify { expect(machine.can_transition? :c).to be_false }
+      end
+    end
+
     describe '#transition' do
       context 'when the transition does not exist' do
         it 'raises an unknown state error' do
           expect { machine.transition(:no_state) }.to raise_error(UnknownState)
+        end
+
+        context 'but the attempted state does exist' do
+          before { StateMachine.transition a: :b }
+
+          it 'returns false' do
+            expect(machine.transition(:b)).to be_false
+          end
         end
       end
 
@@ -119,14 +164,18 @@ module EndState
         end
 
         context 'and a guard is configured' do
+          let(:guard) { double :guard, new: guard_instance }
+          let(:guard_instance) { double :guard_instance, allowed?: nil }
           before do
-            StateMachine.transition a: :b do |transition|
-              transition.allow_previous_states :a
-            end
+            StateMachine.transition a: :b
+            StateMachine.transitions[{ a: :b }].guards << { guard: guard, params: {} }
           end
 
           context 'and the object satisfies the guard' do
-            before { object.state = :a }
+            before do
+              guard_instance.stub(:allowed?).and_return(true)
+              object.state = :a
+            end
 
             it 'transitions the state' do
               machine.transition :b
@@ -135,11 +184,14 @@ module EndState
           end
 
           context 'and the object does not satisfy the guard' do
-            before { object.state = :c }
+            before do
+              guard_instance.stub(:allowed?).and_return(false)
+              object.state = :a
+            end
 
             it 'does not transition the state' do
               machine.transition :b
-              expect(object.state).to eq :c
+              expect(object.state).to eq :a
             end
           end
         end
@@ -171,6 +223,100 @@ module EndState
 
             it 'does not transition the state' do
               machine.transition :b
+              expect(object.state).to eq :a
+            end
+          end
+        end
+      end
+    end
+
+    describe '#transition!' do
+      context 'when the transition does not exist' do
+        it 'raises an unknown state error' do
+          expect { machine.transition!(:no_state) }.to raise_error(UnknownState)
+        end
+
+        context 'but the attempted state does exist' do
+          before { StateMachine.transition a: :b }
+
+          it 'returns false' do
+            expect { machine.transition!(:b) }.to raise_error(UnknownTransition)
+          end
+        end
+      end
+
+      context 'when the transition does exist' do
+        before { object.state = :a }
+
+        context 'and no configuration is given' do
+          before { StateMachine.transition a: :b }
+
+          it 'transitions the state' do
+            machine.transition! :b
+            expect(object.state).to eq :b
+          end
+        end
+
+        context 'and a guard is configured' do
+          let(:guard) { double :guard, new: guard_instance }
+          let(:guard_instance) { double :guard_instance, allowed?: nil }
+          before do
+            StateMachine.transition a: :b
+            StateMachine.transitions[{ a: :b }].guards << { guard: guard, params: {} }
+          end
+
+          context 'and the object satisfies the guard' do
+            before do
+              guard_instance.stub(:allowed?).and_return(true)
+              object.state = :a
+            end
+
+            it 'transitions the state' do
+              machine.transition! :b
+              expect(object.state).to eq :b
+            end
+          end
+
+          context 'and the object does not satisfy the guard' do
+            before do
+              guard_instance.stub(:allowed?).and_return(false)
+              object.state = :a
+            end
+
+            it 'does not transition the state' do
+              expect { machine.transition! :b }.to raise_error(GuardFailed)
+              expect(object.state).to eq :a
+            end
+          end
+        end
+
+        context 'and a finalizer is configured' do
+          before do
+            StateMachine.transition a: :b do |transition|
+              transition.persistence_on
+            end
+          end
+
+          context 'and the finalizer is successful' do
+            before do
+              object.state = :a
+              object.stub(:save).and_return(true)
+            end
+
+            it 'transitions the state' do
+              machine.transition! :b
+              expect(object.state).to eq :b
+            end
+          end
+
+          context 'and the finalizer fails' do
+            before do
+              object.state = :a
+              object.stub(:save).and_return(false)
+            end
+
+            it 'does not transition the state' do
+              expect { machine.transition! :b }.to raise_error(FinalizerFailed)
               expect(object.state).to eq :a
             end
           end
