@@ -1,13 +1,13 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'end_state'
 
-class Easy < EndState::Guards::Guard
-  def call
+class Easy < EndState::Guard
+  def will_allow?
     true
   end
 end
 
-class NoOp < EndState::Finalizers::Finalizer
+class NoOp < EndState::Finalizer
   def call
     true
   end
