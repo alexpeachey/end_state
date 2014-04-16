@@ -193,6 +193,29 @@ transition to the new state.
 You also have the option to use `transition!` which will instead raise an error for failures. If your guards and/or finalizers
 add to the `failure_messages` array then they will be included in the error message.
 
+## Testing
+
+By using the `end_state_matchers` gem you can use custom RSpec matchers to make testing your state machines easier.
+
+In your `spec_helper.rb` add:
+
+```ruby
+require 'end_state_matchers'
+```
+
+In the spec for your state machine:
+
+```ruby
+describe Machine do
+  specify { expect(Machine).to have_transition(a: :b).with_guard(MyGuard) }
+  specify { expect(Machine).to have_transition(a: :b).with_finalizer(MyFinalizer) }
+  specify { expect(Machine).to have_transition(a: :b).with_guard(MyGuard).with_finalizer(MyFinalizer) }
+  specify { expect(Machine).to have_transition(a: :b).with_guards(MyGuard, AnotherGuard) }
+  specify { expect(Machine).to have_transition(a: :b).with_finalizers(MyFinalizer, AnotherFinalizer) }
+  specify { expect(Machine).not_to have_transition(a: :c) }
+end
+```
+
 ## Contributing
 
 1. Fork it ( https://github.com/Originate/end_state/fork )
