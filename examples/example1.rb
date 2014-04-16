@@ -24,20 +24,17 @@ class CustomAction < EndState::Action
 end
 
 class Machine < EndState::StateMachine
-  transition :b do |t|
-    t.allow_previous_states :a
+  transition a: :b do |t|
     t.guard Easy, important_param: 'FOO!'
     t.persistence_on
   end
 
-  transition :c do |t|
-    t.allow_previous_states :b
+  transition b: :c do |t|
     t.custom_action CustomAction
     t.persistence_on
   end
 
-  transition :a do |t|
-    t.allow_previous_states :b, :c
+  transition [:b, :c] => :a do |t|
     t.finalizer NoOp, not_very_important_param: 'Ignore me'
     t.persistence_on
   end
