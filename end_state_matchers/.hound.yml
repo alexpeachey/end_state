@@ -1,0 +1,17 @@
+AllCops:
+  Include:
+    - Rakefile
+    - config.ru
+  Exclude:
+    - db/**
+    - config/**
+    - spec/*helper.rb
+
+LineLength:
+  Enabled: false
+
+Documentation:
+  Enabled: false
+
+AndOr:
+  Enabled: false
