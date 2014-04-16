@@ -31,35 +31,43 @@ module EndState
       end
     end
 
-    describe '#allow_previous_states' do
-      it 'adds an AllowPreviousStates guard for the provided states' do
-        expect { transition.allow_previous_states :a }.to change(transition.guards, :count).by(1)
-      end
-    end
-
-    describe '#deny_previous_states' do
-      it 'adds an DenyPreviousStates guard for the provided states' do
-        expect { transition.deny_previous_states :a }.to change(transition.guards, :count).by(1)
-      end
-    end
-
-    describe '#guards_pass?' do
+    describe '#allowed?' do
       let(:guard) { double :guard, new: guard_instance }
-      let(:guard_instance) { double :guard_instance, call: nil }
+      let(:guard_instance) { double :guard_instance, allowed?: nil }
       before { transition.guards << { guard: guard, params: {} } }
 
       context 'when all guards pass' do
         let(:object) { double :object }
-        before { guard_instance.stub(:call).and_return(true) }
+        before { guard_instance.stub(:allowed?).and_return(true) }
 
-        specify { expect(transition.guards_pass? object).to be_true }
+        specify { expect(transition.allowed? object).to be_true }
       end
 
       context 'when not all guards pass' do
         let(:object) { double :object }
-        before { guard_instance.stub(:call).and_return(false) }
+        before { guard_instance.stub(:allowed?).and_return(false) }
 
-        specify { expect(transition.guards_pass? object).to be_false }
+        specify { expect(transition.allowed? object).to be_false }
+      end
+    end
+
+    describe '#will_allow?' do
+      let(:guard) { double :guard, new: guard_instance }
+      let(:guard_instance) { double :guard_instance, will_allow?: nil }
+      before { transition.guards << { guard: guard, params: {} } }
+
+      context 'when all guards pass' do
+        let(:object) { double :object }
+        before { guard_instance.stub(:will_allow?).and_return(true) }
+
+        specify { expect(transition.will_allow? object).to be_true }
+      end
+
+      context 'when not all guards pass' do
+        let(:object) { double :object }
+        before { guard_instance.stub(:will_allow?).and_return(false) }
+
+        specify { expect(transition.will_allow? object).to be_false }
       end
     end
 

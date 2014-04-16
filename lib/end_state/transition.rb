@@ -10,8 +10,12 @@ module EndState
       @finalizers = []
     end
 
-    def guards_pass?(object)
-      guards.all? { |guard| guard[:guard].new(object, state, guard[:params]).call }
+    def allowed?(object)
+      guards.all? { |guard| guard[:guard].new(object, state, guard[:params]).allowed? }
+    end
+
+    def will_allow?(object)
+      guards.all? { |guard| guard[:guard].new(object, state, guard[:params]).will_allow? }
     end
 
     def finalize(object, previous_state)
@@ -32,14 +36,6 @@ module EndState
 
     def finalizer(finalizer, params = {})
       finalizers << { finalizer: finalizer, params: params }
-    end
-
-    def allow_previous_states(*states)
-      guard Guards::AllowPreviousStates, states: Array(states)
-    end
-
-    def deny_previous_states(*states)
-      guard Guards::DenyPreviousStates, states: Array(states)
     end
 
     def persistence_on
