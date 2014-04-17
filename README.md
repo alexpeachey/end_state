@@ -195,7 +195,7 @@ add to the `failure_messages` array then they will be included in the error mess
 
 ## Testing
 
-By using the `end_state_matchers` gem you can use custom RSpec matchers to make testing your state machines easier.
+Included is a custom RSpec matcher for testing your machines.
 
 In your `spec_helper.rb` add:
 
