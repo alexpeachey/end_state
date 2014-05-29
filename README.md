@@ -29,7 +29,7 @@ Create a state machine by subclassing `EndState::StateMachine`.
 
 ```ruby
 class Machine < EndState::StateMachine
-  transition a: :b
+  transition a: :b, as: :go
   transition b: :c
   transition [:b, :c] => :a
 end
@@ -58,6 +58,8 @@ machine.can_transition? :a  # => true
 machine.b!                  # => false
 machine.a!                  # => true
 machine.state               # => :a
+machine.go!                 # => :true
+machine.state               # => :b
 ```
 
 ## Guards
@@ -66,7 +68,7 @@ Guards can be created by subclassing `EndState::Guard`. Your class will be provi
 
 * `object` - The wrapped object.
 * `state` - The desired state.
-* `params` - A hash of params as set in the transition definition.
+* `params` - A hash of params passed when calling transition on the machine.
 
 Your class should implement the `will_allow?` method which must return true or false.
 
@@ -95,7 +97,7 @@ A guard can be added to the transition definition:
 class Machine < EndState::StateMachine
   transition a: :b do |t|
     t.guard EasyGuard
-    t.guard SomeOtherGuard, option1: 'Some Option', option2: 'Some Other Option'
+    t.guard SomeOtherGuard
   end
 end
 ```
@@ -106,7 +108,7 @@ Finalizers can be created by subclassing `EndState::Finalizer`. Your class will 
 
 * `object` - The wrapped object that has been transitioned.
 * `state` - The previous state.
-* `params` - A hash of params as set in the transition definition.
+* `params` - A hash of params passed when calling transition on the machine.
 
 Your class should implement the `call` method which should return true or false as to whether it was successful or not.
 
@@ -116,7 +118,7 @@ set up a little differently and you have access to:
 
 * `object` - The wrapped object that has been rolled back.
 * `state` - The attempted desired state.
-* `params` - A hash of params as set in the transition definition.
+* `params` - A hash of params passed when calling transition on the machine.
 
 The wrapped object has an array `failure_messages` available for tracking reasons for invalid transitions. You may shovel
 a reason (string) into this if you want to provide information on why your finalizer failed.
@@ -139,7 +141,7 @@ A finalizer can be added to the transition definition:
 ```ruby
 class Machine < EndState::StateMachine
   transition a: :b do |t|
-    t.finalizer WrapUp, option1: 'Some Option', option2: 'Some Other Option'
+    t.finalizer WrapUp
   end
 end
 ```

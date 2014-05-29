@@ -5,7 +5,10 @@ module EndState
   describe StateMachine do
     subject(:machine) { StateMachine.new(object) }
     let(:object) { OpenStruct.new(state: nil) }
-    before { StateMachine.instance_variable_set '@transitions'.to_sym, nil }
+    before do
+      StateMachine.instance_variable_set '@transitions'.to_sym, nil
+      StateMachine.instance_variable_set '@aliases'.to_sym, nil
+    end
 
     describe '.transition' do
       let(:state_map) { { a: :b } }
@@ -22,6 +25,13 @@ module EndState
 
       it 'adds the transition to the state machine' do
         expect(StateMachine.transitions[state_map]).to eq yielded.transition
+      end
+
+      context 'when the :as option is used' do
+        it 'creates an alias' do
+          StateMachine.transition(state_map.merge(as: :go))
+          expect(StateMachine.aliases[:go]).to eq :b
+        end
       end
     end
 
@@ -111,11 +121,22 @@ module EndState
     describe '#{state}!' do
       let(:object) { OpenStruct.new(state: :a) }
       before do
-        StateMachine.transition a: :b
+        StateMachine.transition a: :b, as: :go
       end
 
       it 'transitions the state' do
         machine.b!
+        expect(machine.state).to eq :b
+      end
+
+      it 'accepts params' do
+        machine.stub(:transition)
+        machine.b! foo: 'bar', bar: 'foo'
+        expect(machine).to have_received(:transition).with(:b, { foo: 'bar', bar: 'foo' })
+      end
+
+      it 'works with an alias' do
+        machine.go!
         expect(machine.state).to eq :b
       end
     end
@@ -167,8 +188,9 @@ module EndState
           let(:guard) { double :guard, new: guard_instance }
           let(:guard_instance) { double :guard_instance, allowed?: nil }
           before do
-            StateMachine.transition a: :b
-            StateMachine.transitions[{ a: :b }].guards << { guard: guard, params: {} }
+            StateMachine.transition a: :b do |transition|
+              transition.guard guard
+            end
           end
 
           context 'and the object satisfies the guard' do
@@ -194,19 +216,28 @@ module EndState
               expect(object.state).to eq :a
             end
           end
+
+          context 'and params are passed in' do
+            let(:params) { { foo: 'bar' } }
+            it 'sends the guard the params' do
+              machine.transition :b, params, :soft
+              expect(guard).to have_received(:new).with(machine, :b, params)
+            end  
+          end
         end
 
         context 'and a finalizer is configured' do
+          let(:finalizer) { double :finalizer, new: finalizer_instance }
+          let(:finalizer_instance) { double :finalizer_instance, call: nil, rollback: nil }
           before do
             StateMachine.transition a: :b do |transition|
-              transition.persistence_on
+              transition.finalizer finalizer
             end
           end
 
           context 'and the finalizer is successful' do
             before do
-              object.state = :a
-              object.stub(:save).and_return(true)
+              finalizer_instance.stub(:call).and_return(true)
             end
 
             it 'transitions the state' do
@@ -217,8 +248,7 @@ module EndState
 
           context 'and the finalizer fails' do
             before do
-              object.state = :a
-              object.stub(:save).and_return(false)
+              finalizer_instance.stub(:call).and_return(false)
             end
 
             it 'does not transition the state' do
@@ -262,7 +292,7 @@ module EndState
           let(:guard_instance) { double :guard_instance, allowed?: nil }
           before do
             StateMachine.transition a: :b
-            StateMachine.transitions[{ a: :b }].guards << { guard: guard, params: {} }
+            StateMachine.transitions[{ a: :b }].guards << guard
           end
 
           context 'and the object satisfies the guard' do
@@ -291,16 +321,17 @@ module EndState
         end
 
         context 'and a finalizer is configured' do
+          let(:finalizer) { double :finalizer, new: finalizer_instance }
+          let(:finalizer_instance) { double :finalizer_instance, call: nil, rollback: nil }
           before do
             StateMachine.transition a: :b do |transition|
-              transition.persistence_on
+              transition.finalizer finalizer
             end
           end
 
           context 'and the finalizer is successful' do
             before do
-              object.state = :a
-              object.stub(:save).and_return(true)
+              finalizer_instance.stub(:call).and_return(true)
             end
 
             it 'transitions the state' do
@@ -311,8 +342,7 @@ module EndState
 
           context 'and the finalizer fails' do
             before do
-              object.state = :a
-              object.stub(:save).and_return(false)
+              finalizer_instance.stub(:call).and_return(false)
             end
 
             it 'does not transition the state' do

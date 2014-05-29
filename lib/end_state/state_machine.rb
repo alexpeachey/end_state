@@ -2,17 +2,26 @@ module EndState
   class StateMachine < SimpleDelegator
     attr_accessor :failure_messages
 
-    def self.transition(state_map, &block)
+    def self.transition(state_map)
+      initial_states = Array(state_map.keys.first)
       final_state = state_map.values.first
+      transition_alias = state_map[:as] if state_map.keys.length > 1
       transition = Transition.new(final_state)
-      Array(state_map.keys.first).each do |state|
+      initial_states.each do |state|
         transitions[{ state => final_state }] = transition
       end
-      yield transition if block
+      unless transition_alias.nil?
+        aliases[transition_alias] = final_state
+      end
+      yield transition if block_given?
     end
 
     def self.transitions
       @transitions ||= {}
+    end
+
+    def self.aliases
+      @aliases ||= {}
     end
 
     def self.state_attribute(attribute)
@@ -32,6 +41,11 @@ module EndState
       transitions.keys.map { |state_map| state_map.values.first }.uniq
     end
 
+    def self.transition_state_for(check_state)
+      return check_state if states.include? check_state
+      return aliases[check_state] if aliases.keys.include? check_state
+    end
+
     def object
       __getobj__
     end
@@ -43,28 +57,29 @@ module EndState
       transition.will_allow? state
     end
 
-    def transition(state, mode = :soft)
+    def transition(state, params = {}, mode = :soft)
       @failure_messages = []
       previous_state = self.state
       transition = self.class.transitions[{ previous_state => state }]
       return block_transistion(transition, state, mode) unless transition
-      return guard_failed(state, mode) unless transition.allowed?(self)
+      return guard_failed(state, mode) unless transition.allowed?(self, params)
       return false unless transition.action.new(self, state).call
-      return finalize_failed(state, mode) unless transition.finalize(self, previous_state)
+      return finalize_failed(state, mode) unless transition.finalize(self, previous_state, params)
       true
     end
 
-    def transition!(state)
-      transition state, :hard
+    def transition!(state, params = {})
+      transition state, params, :hard
     end
 
     def method_missing(method, *args, &block)
       check_state = method.to_s[0..-2].to_sym
-      return super unless self.class.states.include? check_state
+      check_state = self.class.transition_state_for(check_state)
+      return super if check_state.nil?
       if method.to_s.end_with?('?')
         state == check_state
       elsif method.to_s.end_with?('!')
-        transition check_state
+        transition check_state, args[0]
       else
         super
       end

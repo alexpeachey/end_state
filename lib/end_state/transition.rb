@@ -10,18 +10,18 @@ module EndState
       @finalizers = []
     end
 
-    def allowed?(object)
-      guards.all? { |guard| guard[:guard].new(object, state, guard[:params]).allowed? }
+    def allowed?(object, params={})
+      guards.all? { |guard| guard.new(object, state, params).allowed? }
     end
 
-    def will_allow?(object)
-      guards.all? { |guard| guard[:guard].new(object, state, guard[:params]).will_allow? }
+    def will_allow?(object, params={})
+      guards.all? { |guard| guard.new(object, state, params).will_allow? }
     end
 
-    def finalize(object, previous_state)
+    def finalize(object, previous_state, params={})
       finalizers.each_with_object([]) do |finalizer, finalized|
         finalized << finalizer
-        return rollback(finalized, object, previous_state) unless run_finalizer(finalizer, object, state)
+        return rollback(finalized, object, previous_state, params) unless run_finalizer(finalizer, object, state, params)
       end
       true
     end
@@ -30,12 +30,12 @@ module EndState
       @action = action
     end
 
-    def guard(guard, params = {})
-      guards << { guard: guard, params: params }
+    def guard(guard)
+      guards << guard
     end
 
-    def finalizer(finalizer, params = {})
-      finalizers << { finalizer: finalizer, params: params }
+    def finalizer(finalizer)
+      finalizers << finalizer
     end
 
     def persistence_on
@@ -44,14 +44,14 @@ module EndState
 
     private
 
-    def rollback(finalized, object, previous_state)
+    def rollback(finalized, object, previous_state, params)
       action.new(object, previous_state).rollback
-      finalized.reverse.each { |f| f[:finalizer].new(object, state, f[:params]).rollback }
+      finalized.reverse.each { |finalizer| finalizer.new(object, state, params).rollback }
       false
     end
 
-    def run_finalizer(finalizer, object, state)
-      finalizer[:finalizer].new(object, state, finalizer[:params]).call
+    def run_finalizer(finalizer, object, state, params)
+      finalizer.new(object, state, params).call
     end
   end
 end

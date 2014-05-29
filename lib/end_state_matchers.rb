@@ -63,7 +63,7 @@ module EndStateMatchers
     def verify_guards
       result = true
       guards.each do |guard|
-        unless machine.transitions[transition].guards.any? { |g| g[:guard] == guard }
+        unless machine.transitions[transition].guards.any? { |g| g == guard }
           failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have guard #{guard.name}"
           result = false
         end
@@ -74,7 +74,7 @@ module EndStateMatchers
     def verify_finalizers
       result = true
       finalizers.each do |finalizer|
-        unless machine.transitions[transition].finalizers.any? { |f| f[:finalizer] == finalizer }
+        unless machine.transitions[transition].finalizers.any? { |f| f == finalizer }
           failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have finalizer #{finalizer.name}"
           result = false
         end

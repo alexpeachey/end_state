@@ -21,53 +21,57 @@ module EndState
       it 'adds a guard' do
         expect { transition.guard guard }.to change(transition.guards, :count).by(1)
       end
-
-      context 'when params are provided' do
-        let(:params) { {} }
-
-        it 'adds a guard' do
-          expect { transition.guard guard, params }.to change(transition.guards, :count).by(1)
-        end
-      end
     end
 
     describe '#allowed?' do
       let(:guard) { double :guard, new: guard_instance }
       let(:guard_instance) { double :guard_instance, allowed?: nil }
-      before { transition.guards << { guard: guard, params: {} } }
+      let(:object) { double :object }
+      before { transition.guards << guard }
 
       context 'when all guards pass' do
-        let(:object) { double :object }
         before { guard_instance.stub(:allowed?).and_return(true) }
 
         specify { expect(transition.allowed? object).to be_true }
       end
 
       context 'when not all guards pass' do
-        let(:object) { double :object }
         before { guard_instance.stub(:allowed?).and_return(false) }
 
         specify { expect(transition.allowed? object).to be_false }
+      end
+
+      context 'when params are provided' do
+        it 'creates the guard with the params' do
+          transition.allowed? object, { foo: 'bar' }
+          expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
+        end
       end
     end
 
     describe '#will_allow?' do
       let(:guard) { double :guard, new: guard_instance }
       let(:guard_instance) { double :guard_instance, will_allow?: nil }
-      before { transition.guards << { guard: guard, params: {} } }
+      let(:object) { double :object }
+      before { transition.guards << guard }
 
       context 'when all guards pass' do
-        let(:object) { double :object }
         before { guard_instance.stub(:will_allow?).and_return(true) }
 
         specify { expect(transition.will_allow? object).to be_true }
       end
 
       context 'when not all guards pass' do
-        let(:object) { double :object }
         before { guard_instance.stub(:will_allow?).and_return(false) }
 
         specify { expect(transition.will_allow? object).to be_false }
+      end
+
+      context 'when params are provided' do
+        it 'creates the guard with the params' do
+          transition.will_allow? object, { foo: 'bar' }
+          expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
+        end
       end
     end
 
@@ -76,14 +80,6 @@ module EndState
 
       it 'adds a finalizer' do
         expect { transition.finalizer finalizer }.to change(transition.finalizers, :count).by(1)
-      end
-
-      context 'when params are provided' do
-        let(:params) { {} }
-
-        it 'adds a finalizer' do
-          expect { transition.finalizer finalizer, params }.to change(transition.finalizers, :count).by(1)
-        end
       end
     end
 
@@ -97,7 +93,7 @@ module EndState
       let(:finalizer) { double :finalizer, new: finalizer_instance }
       let(:finalizer_instance) { double :finalizer_instance, call: nil, rollback: nil }
       let(:object) { OpenStruct.new(state: :b) }
-      before { transition.finalizers << { finalizer: finalizer, params: {} } }
+      before { transition.finalizers << finalizer }
 
       context 'when all finalizers succeed' do
         before { finalizer_instance.stub(:call).and_return(true) }
@@ -113,6 +109,13 @@ module EndState
         it 'rolls them back' do
           transition.finalize object, :a
           expect(finalizer_instance).to have_received(:rollback)
+        end
+      end
+
+      context 'when params are provided' do
+        it 'creates a finalizer with the params' do
+          transition.finalize object, :b, { foo: 'bar' }
+          expect(finalizer).to have_received(:new).twice.with(object, :a, { foo: 'bar'} )
         end
       end
     end
