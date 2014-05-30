@@ -7,6 +7,11 @@ require 'end_state/finalizers'
 require 'end_state/transition'
 require 'end_state/action'
 require 'end_state/state_machine'
+begin
+  require 'graphviz'
+  require 'end_state/graph'
+rescue LoadError
+end
 
 module EndState
 end
