@@ -1,6 +1,7 @@
 require 'delegate'
 require 'end_state/version'
 require 'end_state/errors'
+require 'end_state/messages'
 require 'end_state/guard'
 require 'end_state/finalizer'
 require 'end_state/finalizers'

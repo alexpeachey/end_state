@@ -1,6 +1,6 @@
 module EndState
   class StateMachine < SimpleDelegator
-    attr_accessor :failure_messages
+    attr_accessor :failure_messages, :success_messages
 
     def self.transition(state_map)
       initial_states = Array(state_map.keys.first)
@@ -59,6 +59,7 @@ module EndState
 
     def transition(state, params = {}, mode = :soft)
       @failure_messages = []
+      @success_messages = []
       previous_state = self.state
       transition = self.class.transitions[{ previous_state => state }]
       return block_transistion(transition, state, mode) unless transition

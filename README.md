@@ -77,7 +77,12 @@ These will only be called during the check performed during the transition and w
 These hooks can be useful for things like logging.
 
 The wrapped object has an array `failure_messages` available for tracking reasons for invalid transitions. You may shovel
-a reason (string) into this if you want to provide information on why your guard failed.
+a reason (string) into this if you want to provide information on why your guard failed. You can also use the helper method in
+the `Guard` class called `add_error` which takes a string.
+
+The wrapped object has an array `success_messages` available for tracking reasons for valid transitions. You may shovel
+a reason (string) into this if you want to provide information on why your guard passed. You can also use the helper method in
+the `Guard` class called `add_success` which takes a string.
 
 ```ruby
 class EasyGuard < EndState::Guard
@@ -121,7 +126,12 @@ set up a little differently and you have access to:
 * `params` - A hash of params passed when calling transition on the machine.
 
 The wrapped object has an array `failure_messages` available for tracking reasons for invalid transitions. You may shovel
-a reason (string) into this if you want to provide information on why your finalizer failed.
+a reason (string) into this if you want to provide information on why your finalizer failed. You can also use the helper method in
+the `Finalizer` class called `add_error` which takes a string.
+
+The wrapped object has an array `success_messages` available for tracking reasons for valid transitions. You may shovel
+a reason (string) into this if you want to provide information on why your finalizer succeeded. You can also use the helper method in
+the `Finalizer` class called `add_success` which takes a string.
 
 ```ruby
 class WrapUp < EndState::Finalizer
@@ -194,6 +204,12 @@ transition to the new state.
 
 You also have the option to use `transition!` which will instead raise an error for failures. If your guards and/or finalizers
 add to the `failure_messages` array then they will be included in the error message.
+
+## Graphing
+
+If you install `GraphViz` and the gem `ruby-graphviz` you can create images representing your state machines.
+
+`EndState::Graph.new(MyMachine).draw.output png: 'my_machine.png'`
 
 ## Testing
 

@@ -1,5 +1,6 @@
 module EndState
   class Finalizer
+    include Messages
     attr_reader :object, :state, :params
 
     def initialize(object, state, params)
