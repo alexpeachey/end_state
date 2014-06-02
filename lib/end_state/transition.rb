@@ -1,6 +1,6 @@
 module EndState
   class Transition
-    attr_reader :state
+    attr_reader :state, :blocked_event_message
     attr_accessor :action, :guards, :finalizers
 
     def initialize(state)
@@ -40,6 +40,10 @@ module EndState
 
     def persistence_on
       finalizer Finalizers::Persistence
+    end
+
+    def blocked(message)
+      @blocked_event_message = message
     end
 
     private

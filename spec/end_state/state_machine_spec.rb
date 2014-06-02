@@ -7,7 +7,8 @@ module EndState
     let(:object) { OpenStruct.new(state: nil) }
     before do
       StateMachine.instance_variable_set '@transitions'.to_sym, nil
-      StateMachine.instance_variable_set '@aliases'.to_sym, nil
+      StateMachine.instance_variable_set '@events'.to_sym, nil
+      StateMachine.instance_variable_set '@store_states_as_strings'.to_sym, nil
     end
 
     describe '.transition' do
@@ -30,7 +31,7 @@ module EndState
       context 'when the :as option is used' do
         it 'creates an alias' do
           StateMachine.transition(state_map.merge(as: :go))
-          expect(StateMachine.aliases[:go]).to eq :b
+          expect(StateMachine.events[:go]).to eq [{ a: :b }]
         end
       end
     end
@@ -83,6 +84,19 @@ module EndState
       specify { expect(StateMachine.end_states).to eq [:b, :c] }
     end
 
+    describe '.store_states_as_strings!' do
+      it 'sets the flag' do
+        StateMachine.store_states_as_strings!
+        expect(StateMachine.store_states_as_strings).to be_true
+      end
+    end
+
+    describe '#store_states_as_strings' do
+      it 'is false by default' do
+        expect(StateMachine.store_states_as_strings).to be_false
+      end
+    end
+
     describe '#state' do
       context 'when the object has state :a' do
         let(:object) { OpenStruct.new(state: :a) }
@@ -121,7 +135,9 @@ module EndState
     describe '#{state}!' do
       let(:object) { OpenStruct.new(state: :a) }
       before do
-        StateMachine.transition a: :b, as: :go
+        StateMachine.transition a: :b, as: :go do |t|
+          t.blocked 'Invalid event!'
+        end
       end
 
       it 'transitions the state' do
@@ -135,9 +151,23 @@ module EndState
         expect(machine).to have_received(:transition).with(:b, { foo: 'bar', bar: 'foo' })
       end
 
-      it 'works with an alias' do
+      it 'works with an event' do
         machine.go!
         expect(machine.state).to eq :b
+      end
+
+      context 'when the intial state is :c' do
+        let(:object) { OpenStruct.new(state: :c) }
+
+        it 'blocks invalid events' do
+          machine.go!
+          expect(machine.state).to eq :c
+        end
+
+        it 'adds a failure message specified by blocked' do
+          machine.go!
+          expect(machine.failure_messages).to eq ['Invalid event!']
+        end
       end
     end
 
@@ -181,6 +211,15 @@ module EndState
           it 'transitions the state' do
             machine.transition :b
             expect(object.state).to eq :b
+          end
+
+          context 'and the machine is set to store_states_as_strings' do
+            before { StateMachine.store_states_as_strings! }
+
+            it 'transitions the state stored as a string' do
+              machine.transition :b
+              expect(object.state).to eq 'b'
+            end
           end
         end
 

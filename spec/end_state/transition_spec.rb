@@ -15,6 +15,13 @@ module EndState
       end
     end
 
+    describe '#blocked' do
+      it 'sets the blocked event message' do
+        transition.blocked 'This is blocked.'
+        expect(transition.blocked_event_message).to eq 'This is blocked.'
+      end
+    end
+
     describe '#guard' do
       let(:guard) { double :guard }
 
@@ -93,7 +100,10 @@ module EndState
       let(:finalizer) { double :finalizer, new: finalizer_instance }
       let(:finalizer_instance) { double :finalizer_instance, call: nil, rollback: nil }
       let(:object) { OpenStruct.new(state: :b) }
-      before { transition.finalizers << finalizer }
+      before do
+        object.stub_chain(:class, :store_states_as_strings).and_return(false)
+        transition.finalizers << finalizer
+      end
 
       context 'when all finalizers succeed' do
         before { finalizer_instance.stub(:call).and_return(true) }

@@ -8,7 +8,7 @@ module EndState
     end
 
     def call
-      object.state = state
+      object.state = object.class.store_states_as_strings ? state.to_s : state.to_sym
       true
     end
 

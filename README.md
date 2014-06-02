@@ -196,6 +196,48 @@ class Machine < EndState::StateMachine
 end
 ```
 
+## Events
+
+By using the `as` option in a transition definition you are creating an event representing that transition.
+This can allow you to exercise the machine in a more natural "verb" style interaction. When using `as` event
+definitions you can optionally set a `blocked` message on the transition. When the event is executed, if the
+machine is not in a state maching the initial state of the event, the message is added to the `failure_messages`
+array on the machine.
+
+```
+class Machine < EndState::StateMachine
+  transition a: :b, as: :go do |t|
+    t.blocked 'Cannot go!'
+  end
+end
+
+machine = Machine.new(StatefulObject.new(:a))
+
+machine.go!                 # => true
+machine.state               # => :b
+machine.go!                 # => false
+machine.failure_messages    # => ['Cannot go!']
+```
+
+## State storage
+
+You may want to use an attribute other than `state` to track the state of the machine.
+
+```
+class Machine < EndState::StateMachine
+  state_attribute :status
+end
+```
+
+Depending on how you persist the `state` (if at all) you may want what is stored in `state` to be a string instead
+of a symbol. You can tell the machine this preference.
+
+```
+class Machine < EndState::StateMachine
+  store_states_as_strings!
+end
+```
+
 ## Exceptions for failing Transitions
 
 By default `transition` will only raise an exception, `EndState::UnknownState`, if called with a state that doesn't exist.
@@ -210,6 +252,11 @@ add to the `failure_messages` array then they will be included in the error mess
 If you install `GraphViz` and the gem `ruby-graphviz` you can create images representing your state machines.
 
 `EndState::Graph.new(MyMachine).draw.output png: 'my_machine.png'`
+
+If you use events in your machine, it will add the events along the arrow representing the transition. If you don't want this,
+pass in false when contructing the Graph.
+
+`EndState::Graph.new(MyMachine, false).draw.output png: 'my_machine.png'`
 
 ## Testing
 

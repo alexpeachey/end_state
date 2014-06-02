@@ -6,6 +6,8 @@ module EndState
     let(:object) { OpenStruct.new(state: nil) }
     let(:state) { :a }
 
+    before { object.stub_chain(:class, :store_states_as_strings).and_return(false) }
+
     describe '#call' do
       it 'changes the state to the new state' do
         action.call
