@@ -130,6 +130,16 @@ module EndState
         specify { expect(machine.b?).to be_true }
         specify { expect(machine.a?).to be_false }
       end
+
+      context 'when the state shares a name with an event' do
+        before { StateMachine.transition start: :stop, as: :stop }
+
+        context 'and the object, in that state, cannot transition on the event' do
+          let(:object) { OpenStruct.new(state: :stop) }
+
+          specify { expect(machine.stop?).to be_true }
+        end
+      end
     end
 
     describe '#{state}!' do
@@ -261,7 +271,7 @@ module EndState
             it 'sends the guard the params' do
               machine.transition :b, params, :soft
               expect(guard).to have_received(:new).with(machine, :b, params)
-            end  
+            end
           end
         end
 

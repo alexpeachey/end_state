@@ -80,12 +80,11 @@ module EndState
 
     def method_missing(method, *args, &block)
       check_state = method.to_s[0..-2].to_sym
+      return current_state?(check_state) if method.to_s.end_with?('?')
       check_state = state_for_event(check_state) || check_state
       return false if check_state == :__invalid_event__
       return super unless self.class.states.include?(check_state)
-      if method.to_s.end_with?('?')
-        state.to_sym == check_state
-      elsif method.to_s.end_with?('!')
+      if method.to_s.end_with?('!')
         transition check_state, args[0]
       else
         super
@@ -93,6 +92,10 @@ module EndState
     end
 
     private
+
+    def current_state?(check_state)
+      state.to_sym == check_state
+    end
 
     def state_for_event(event)
       transitions = self.class.events[event]
