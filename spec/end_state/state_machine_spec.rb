@@ -10,6 +10,7 @@ module EndState
       StateMachine.instance_variable_set '@events'.to_sym, nil
       StateMachine.instance_variable_set '@store_states_as_strings'.to_sym, nil
       StateMachine.instance_variable_set '@initial_state'.to_sym, :__nil__
+      StateMachine.instance_variable_set '@mode'.to_sym, :soft
     end
 
     describe '.transition' do
@@ -204,6 +205,14 @@ module EndState
         it 'adds a failure message specified by blocked' do
           machine.go!
           expect(machine.failure_messages).to eq ['Invalid event!']
+        end
+
+        context 'and all transitions are forced to run in :hard mode' do
+          before { machine.class.treat_all_transitions_as_hard! }
+
+          it 'raises an InvalidEvent error' do
+            expect { machine.go! }.to raise_error(InvalidEvent)
+          end
         end
       end
     end
