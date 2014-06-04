@@ -2,6 +2,21 @@ module EndState
   class StateMachine < SimpleDelegator
     attr_accessor :failure_messages, :success_messages
 
+    def initialize(object)
+      super
+      Action.new(self, self.class.initial_state).call if self.state.nil?
+    end
+
+    @initial_state = :nil_state
+
+    def self.initial_state
+      @initial_state
+    end
+
+    def self.set_initial_state(state)
+      @initial_state = state.to_sym
+    end
+
     def self.store_states_as_strings!
       @store_states_as_strings = true
     end

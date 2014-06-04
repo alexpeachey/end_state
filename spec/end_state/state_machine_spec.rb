@@ -9,6 +9,7 @@ module EndState
       StateMachine.instance_variable_set '@transitions'.to_sym, nil
       StateMachine.instance_variable_set '@events'.to_sym, nil
       StateMachine.instance_variable_set '@store_states_as_strings'.to_sym, nil
+      StateMachine.instance_variable_set '@initial_state'.to_sym, :nil_state
     end
 
     describe '.transition' do
@@ -97,7 +98,21 @@ module EndState
       end
     end
 
+    describe '.initial_state' do
+      context 'when set to :first' do
+        before { StateMachine.set_initial_state :first }
+
+        it 'has that initial state' do
+          expect(machine.state).to eq :first
+        end
+      end
+    end
+
     describe '#state' do
+      context 'when there is no state set' do
+        specify { expect(machine.state).to eq :nil_state }
+      end
+
       context 'when the object has state :a' do
         let(:object) { OpenStruct.new(state: :a) }
 
