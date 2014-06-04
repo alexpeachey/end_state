@@ -155,6 +155,18 @@ module EndState
           specify { expect(machine.stop?).to be_true }
         end
       end
+
+      context 'when the requested predicate is not a state or event' do
+        module Predicate
+          def foo? ; :foo ; end
+        end
+
+        before { object.extend(Predicate) }
+
+        it 'call super up to SimpleDelegator, which handles the method' do
+          expect(machine.foo?).to eq(:foo)
+        end
+      end
     end
 
     describe '#{state}!' do
