@@ -64,7 +64,7 @@ machine.state               # => :b
 
 ## Initial State
 
-If you wrap an object that currently has `nil` as the state, the state will be set to `:nil_state`.
+If you wrap an object that currently has `nil` as the state, the state will be set to `:__nil__`.
 You can change this using the `set_initial_state` method.
 
 ```ruby

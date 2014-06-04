@@ -7,7 +7,7 @@ module EndState
       Action.new(self, self.class.initial_state).call if self.state.nil?
     end
 
-    @initial_state = :nil_state
+    @initial_state = :__nil__
 
     def self.initial_state
       @initial_state

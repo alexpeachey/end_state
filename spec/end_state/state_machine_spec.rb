@@ -9,7 +9,7 @@ module EndState
       StateMachine.instance_variable_set '@transitions'.to_sym, nil
       StateMachine.instance_variable_set '@events'.to_sym, nil
       StateMachine.instance_variable_set '@store_states_as_strings'.to_sym, nil
-      StateMachine.instance_variable_set '@initial_state'.to_sym, :nil_state
+      StateMachine.instance_variable_set '@initial_state'.to_sym, :__nil__
     end
 
     describe '.transition' do
@@ -110,7 +110,7 @@ module EndState
 
     describe '#state' do
       context 'when there is no state set' do
-        specify { expect(machine.state).to eq :nil_state }
+        specify { expect(machine.state).to eq :__nil__ }
       end
 
       context 'when the object has state :a' do
