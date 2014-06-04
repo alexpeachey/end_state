@@ -8,6 +8,7 @@ module EndState
     end
 
     @initial_state = :__nil__
+    @mode = :soft
 
     def self.initial_state
       @initial_state
@@ -15,6 +16,14 @@ module EndState
 
     def self.set_initial_state(state)
       @initial_state = state.to_sym
+    end
+
+    def self.treat_all_transitions_as_hard!
+      @mode = :hard
+    end
+
+    def self.mode
+      @mode
     end
 
     def self.store_states_as_strings!
@@ -76,7 +85,7 @@ module EndState
       transition.will_allow? state, params
     end
 
-    def transition(state, params = {}, mode = :soft)
+    def transition(state, params = {}, mode = self.class.mode)
       @failure_messages = []
       @success_messages = []
       previous_state = self.state ? self.state.to_sym : self.state
@@ -124,6 +133,7 @@ module EndState
     end
 
     def invalid_event(event)
+      fail InvalidEvent, "Transition by event: #{event} is invalid." if self.class.mode == :hard
       message = self.class.transitions[self.class.events[event].first].blocked_event_message
       @failure_messages = [message] if message
       :__invalid_event__
