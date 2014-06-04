@@ -234,7 +234,7 @@ machine.failure_messages    # => ['Cannot go!']
 
 You may want to use an attribute other than `state` to track the state of the machine.
 
-```
+```ruby
 class Machine < EndState::StateMachine
   state_attribute :status
 end
@@ -243,7 +243,7 @@ end
 Depending on how you persist the `state` (if at all) you may want what is stored in `state` to be a string instead
 of a symbol. You can tell the machine this preference.
 
-```
+```ruby
 class Machine < EndState::StateMachine
   store_states_as_strings!
 end
@@ -251,12 +251,20 @@ end
 
 ## Exceptions for failing Transitions
 
-By default `transition` will only raise an exception, `EndState::UnknownState`, if called with a state that doesn't exist.
+By default `transition` will only raise an error, `EndState::UnknownState`, if called with a state that doesn't exist.
 All other failures, such as missing transition, guard failure, or finalizer failure will silently just return `false` and not
 transition to the new state.
 
 You also have the option to use `transition!` which will instead raise an error for failures. If your guards and/or finalizers
 add to the `failure_messages` array then they will be included in the error message.
+
+Additionally, if you would like to treat all transitions as hard and raise an error you can set that in the machine definition.
+
+```ruby
+class Machine < EndState::StateMachine
+  treat_all_transitions_as_hard!
+end
+```
 
 ## Graphing
 
