@@ -62,6 +62,17 @@ machine.go!                 # => :true
 machine.state               # => :b
 ```
 
+## Initial State
+
+If you wrap an object that currently has `nil` as the state, the state will be set to `:__nil__`.
+You can change this using the `set_initial_state` method.
+
+```ruby
+class Machine < EndState::StateMachine
+  set_initial_state :first
+end
+```
+
 ## Guards
 
 Guards can be created by subclassing `EndState::Guard`. Your class will be provided access to:
