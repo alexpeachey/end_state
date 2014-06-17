@@ -7,7 +7,7 @@ class Easy < EndState::Guard
   end
 end
 
-class NoOp < EndState::Finalizer
+class NoOp < EndState::Concluder
   def call
     true
   end
@@ -35,7 +35,7 @@ class Machine < EndState::StateMachine
   end
 
   transition [:b, :c] => :a do |t|
-    t.finalizer NoOp, not_very_important_param: 'Ignore me'
+    t.concluder NoOp, not_very_important_param: 'Ignore me'
     t.persistence_on
   end
 end

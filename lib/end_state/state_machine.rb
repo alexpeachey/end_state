@@ -94,7 +94,7 @@ module EndState
       return block_transistion(transition, state, mode) unless transition
       return guard_failed(state, mode) unless transition.allowed?(self, params)
       return false unless transition.action.new(self, state).call
-      return finalize_failed(state, mode) unless transition.finalize(self, previous_state, params)
+      return conclude_failed(state, mode) unless transition.conclude(self, previous_state, params)
       true
     end
 
@@ -152,9 +152,9 @@ module EndState
       fail GuardFailed, "The transition to #{state} was blocked: #{failure_messages.join(', ')}"
     end
 
-    def finalize_failed(state, mode)
+    def conclude_failed(state, mode)
       return false unless mode == :hard
-      fail FinalizerFailed, "The transition to #{state} was rolled back: #{failure_messages.join(', ')}"
+      fail ConcluderFailed, "The transition to #{state} was rolled back: #{failure_messages.join(', ')}"
     end
   end
 end

@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module EndState
-  describe Finalizer do
-    subject(:finalizer) { Finalizer.new(object, state, params) }
+  describe Concluder do
+    subject(:concluder) { Concluder.new(object, state, params) }
     let(:object) { Struct.new('Machine', :failure_messages, :success_messages, :state, :store_states_as_strings).new }
     let(:state) { :a }
     let(:params) { {} }
@@ -13,14 +13,14 @@ module EndState
 
     describe '#add_error' do
       it 'adds an error' do
-        finalizer.add_error('error')
+        concluder.add_error('error')
         expect(object.failure_messages).to eq ['error']
       end
     end
 
     describe '#add_success' do
       it 'adds an success' do
-        finalizer.add_error('success')
+        concluder.add_error('success')
         expect(object.failure_messages).to eq ['success']
       end
     end

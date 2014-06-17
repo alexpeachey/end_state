@@ -311,18 +311,18 @@ module EndState
           end
         end
 
-        context 'and a finalizer is configured' do
-          let(:finalizer) { double :finalizer, new: finalizer_instance }
-          let(:finalizer_instance) { double :finalizer_instance, call: nil, rollback: nil }
+        context 'and a concluder is configured' do
+          let(:concluder) { double :concluder, new: concluder_instance }
+          let(:concluder_instance) { double :concluder_instance, call: nil, rollback: nil }
           before do
             StateMachine.transition a: :b do |transition|
-              transition.finalizer finalizer
+              transition.concluder concluder
             end
           end
 
-          context 'and the finalizer is successful' do
+          context 'and the concluder is successful' do
             before do
-              finalizer_instance.stub(:call).and_return(true)
+              concluder_instance.stub(:call).and_return(true)
             end
 
             it 'transitions the state' do
@@ -331,9 +331,9 @@ module EndState
             end
           end
 
-          context 'and the finalizer fails' do
+          context 'and the concluder fails' do
             before do
-              finalizer_instance.stub(:call).and_return(false)
+              concluder_instance.stub(:call).and_return(false)
             end
 
             it 'does not transition the state' do
@@ -405,18 +405,18 @@ module EndState
           end
         end
 
-        context 'and a finalizer is configured' do
-          let(:finalizer) { double :finalizer, new: finalizer_instance }
-          let(:finalizer_instance) { double :finalizer_instance, call: nil, rollback: nil }
+        context 'and a concluder is configured' do
+          let(:concluder) { double :concluder, new: concluder_instance }
+          let(:concluder_instance) { double :concluder_instance, call: nil, rollback: nil }
           before do
             StateMachine.transition a: :b do |transition|
-              transition.finalizer finalizer
+              transition.concluder concluder
             end
           end
 
-          context 'and the finalizer is successful' do
+          context 'and the concluder is successful' do
             before do
-              finalizer_instance.stub(:call).and_return(true)
+              concluder_instance.stub(:call).and_return(true)
             end
 
             it 'transitions the state' do
@@ -425,13 +425,13 @@ module EndState
             end
           end
 
-          context 'and the finalizer fails' do
+          context 'and the concluder fails' do
             before do
-              finalizer_instance.stub(:call).and_return(false)
+              concluder_instance.stub(:call).and_return(false)
             end
 
             it 'does not transition the state' do
-              expect { machine.transition! :b }.to raise_error(FinalizerFailed)
+              expect { machine.transition! :b }.to raise_error(ConcluderFailed)
               expect(object.state).to eq :a
             end
           end

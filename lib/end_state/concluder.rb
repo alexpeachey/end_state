@@ -1,5 +1,5 @@
 module EndState
-  class Finalizer
+  class Concluder
     include Messages
     attr_reader :object, :state, :params
 
@@ -17,4 +17,8 @@ module EndState
       true
     end
   end
+
+  # Backward compatibility
+  # Finalizer is deprecated
+  Finalizer = Concluder
 end

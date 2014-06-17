@@ -4,13 +4,13 @@ module EndStateMatchers
   end
 
   class TransitionMatcher
-    attr_reader :transition, :machine, :failure_messages, :guards, :finalizers
+    attr_reader :transition, :machine, :failure_messages, :guards, :concluders
 
     def initialize(transition)
       @transition = transition
       @failure_messages = []
       @guards = []
-      @finalizers = []
+      @concluders = []
     end
 
     def matches?(actual)
@@ -36,15 +36,21 @@ module EndStateMatchers
       self
     end
 
-    def with_finalizer(finalizer)
-      @finalizers << finalizer
+    def with_concluder(concluder)
+      @concluders << concluder
       self
     end
 
-    def with_finalizers(*finalizers)
-      @finalizers += Array(finalizers)
+    def with_concluders(*concluders)
+      @concluders += Array(concluders)
       self
     end
+
+    # Backward compatibility
+    # Finalizer is deprecated
+    alias_method :with_finalizer, :with_concluder
+    alias_method :with_finalizers, :with_concluders
+    alias_method :finalizers, :concluders
 
     private
 
@@ -52,7 +58,7 @@ module EndStateMatchers
       result = true
       if machine.transitions.keys.include? transition
         result = (result && verify_guards) if guards.any?
-        result = (result && verify_finalizers) if finalizers.any?
+        result = (result && verify_concluders) if concluders.any?
         result
       else
         failure_messages << "expected that #{machine.name} would have transition :#{transition.keys.first} => :#{transition.values.first}"
@@ -71,11 +77,11 @@ module EndStateMatchers
       result
     end
 
-    def verify_finalizers
+    def verify_concluders
       result = true
-      finalizers.each do |finalizer|
-        unless machine.transitions[transition].finalizers.any? { |f| f == finalizer }
-          failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have finalizer #{finalizer.name}"
+      concluders.each do |concluder|
+        unless machine.transitions[transition].concluders.any? { |f| f == concluder }
+          failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have concluder #{concluder.name}"
           result = false
         end
       end
