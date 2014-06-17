@@ -5,4 +5,8 @@ module EndState
   class InvalidEvent < Error; end
   class GuardFailed < Error; end
   class ConcluderFailed < Error; end
+
+  # Backward compatibility
+  # Finalizer is deprecated
+  FinalizerFailed = ConcluderFailed
 end
