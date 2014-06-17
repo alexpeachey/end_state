@@ -82,50 +82,50 @@ module EndState
       end
     end
 
-    describe '#finalizer' do
-      let(:finalizer) { double :finalizer }
+    describe '#concluder' do
+      let(:concluder) { double :concluder }
 
-      it 'adds a finalizer' do
-        expect { transition.finalizer finalizer }.to change(transition.finalizers, :count).by(1)
+      it 'adds a concluder' do
+        expect { transition.concluder concluder }.to change(transition.concluders, :count).by(1)
       end
     end
 
     describe '#persistence_on' do
-      it 'adds a Persistence finalizer' do
-        expect { transition.persistence_on }.to change(transition.finalizers, :count).by(1)
+      it 'adds a Persistence concluder' do
+        expect { transition.persistence_on }.to change(transition.concluders, :count).by(1)
       end
     end
 
-    describe '#finalize' do
-      let(:finalizer) { double :finalizer, new: finalizer_instance }
-      let(:finalizer_instance) { double :finalizer_instance, call: nil, rollback: nil }
+    describe '#conclude' do
+      let(:concluder) { double :concluder, new: concluder_instance }
+      let(:concluder_instance) { double :concluder_instance, call: nil, rollback: nil }
       let(:object) { OpenStruct.new(state: :b) }
       before do
         object.stub_chain(:class, :store_states_as_strings).and_return(false)
-        transition.finalizers << finalizer
+        transition.concluders << concluder
       end
 
-      context 'when all finalizers succeed' do
-        before { finalizer_instance.stub(:call).and_return(true) }
+      context 'when all concluders succeed' do
+        before { concluder_instance.stub(:call).and_return(true) }
 
-        specify { expect(transition.finalize object, :a).to be_true }
+        specify { expect(transition.conclude object, :a).to be_true }
       end
 
-      context 'when not all finalizers succeed' do
-        before { finalizer_instance.stub(:call).and_return(false) }
+      context 'when not all concluders succeed' do
+        before { concluder_instance.stub(:call).and_return(false) }
 
-        specify { expect(transition.finalize object, :a).to be_false }
+        specify { expect(transition.conclude object, :a).to be_false }
 
         it 'rolls them back' do
-          transition.finalize object, :a
-          expect(finalizer_instance).to have_received(:rollback)
+          transition.conclude object, :a
+          expect(concluder_instance).to have_received(:rollback)
         end
       end
 
       context 'when params are provided' do
-        it 'creates a finalizer with the params' do
-          transition.finalize object, :b, { foo: 'bar' }
-          expect(finalizer).to have_received(:new).twice.with(object, :a, { foo: 'bar'} )
+        it 'creates a concluder with the params' do
+          transition.conclude object, :b, { foo: 'bar' }
+          expect(concluder).to have_received(:new).twice.with(object, :a, { foo: 'bar'} )
         end
       end
     end

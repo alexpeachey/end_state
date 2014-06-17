@@ -118,9 +118,9 @@ class Machine < EndState::StateMachine
 end
 ```
 
-## Finalizers
+## Concluders
 
-Finalizers can be created by subclassing `EndState::Finalizer`. Your class will be provided access to:
+Concluders can be created by subclassing `EndState::Concluder`. Your class will be provided access to:
 
 * `object` - The wrapped object that has been transitioned.
 * `state` - The previous state.
@@ -128,8 +128,8 @@ Finalizers can be created by subclassing `EndState::Finalizer`. Your class will 
 
 Your class should implement the `call` method which should return true or false as to whether it was successful or not.
 
-If your finalizer returns false, the transition will be "rolled back" and the failing transition, as well as all previous transitions
-will be rolled back. The roll back is performed by calling `rollback` on the finalizer. During the roll back the finalizer will be
+If your concluder returns false, the transition will be "rolled back" and the failing transition, as well as all previous transitions
+will be rolled back. The roll back is performed by calling `rollback` on the concluder. During the roll back the concluder will be
 set up a little differently and you have access to:
 
 * `object` - The wrapped object that has been rolled back.
@@ -137,15 +137,15 @@ set up a little differently and you have access to:
 * `params` - A hash of params passed when calling transition on the machine.
 
 The wrapped object has an array `failure_messages` available for tracking reasons for invalid transitions. You may shovel
-a reason (string) into this if you want to provide information on why your finalizer failed. You can also use the helper method in
-the `Finalizer` class called `add_error` which takes a string.
+a reason (string) into this if you want to provide information on why your concluder failed. You can also use the helper method in
+the `Concluder` class called `add_error` which takes a string.
 
 The wrapped object has an array `success_messages` available for tracking reasons for valid transitions. You may shovel
-a reason (string) into this if you want to provide information on why your finalizer succeeded. You can also use the helper method in
-the `Finalizer` class called `add_success` which takes a string.
+a reason (string) into this if you want to provide information on why your concluder succeeded. You can also use the helper method in
+the `Concluder` class called `add_success` which takes a string.
 
 ```ruby
-class WrapUp < EndState::Finalizer
+class WrapUp < EndState::Concluder
   def call
     # Some important processing
     true
@@ -157,17 +157,17 @@ class WrapUp < EndState::Finalizer
 end
 ```
 
-A finalizer can be added to the transition definition:
+A concluder can be added to the transition definition:
 
 ```ruby
 class Machine < EndState::StateMachine
   transition a: :b do |t|
-    t.finalizer WrapUp
+    t.concluder WrapUp
   end
 end
 ```
 
-Since it is a common use case, a finalizer is included which will call `save` on the wrapped object if it responds to `save`.
+Since it is a common use case, a concluder is included which will call `save` on the wrapped object if it responds to `save`.
 You can use this with a convience method in your transition definition:
 
 ```ruby
@@ -252,10 +252,10 @@ end
 ## Exceptions for failing Transitions
 
 By default `transition` will only raise an error, `EndState::UnknownState`, if called with a state that doesn't exist.
-All other failures, such as missing transition, guard failure, or finalizer failure will silently just return `false` and not
+All other failures, such as missing transition, guard failure, or concluder failure will silently just return `false` and not
 transition to the new state.
 
-You also have the option to use `transition!` which will instead raise an error for failures. If your guards and/or finalizers
+You also have the option to use `transition!` which will instead raise an error for failures. If your guards and/or concluders
 add to the `failure_messages` array then they will be included in the error message.
 
 Additionally, if you would like to treat all transitions as hard and raise an error you can set that in the machine definition.
@@ -292,10 +292,10 @@ In the spec for your state machine:
 ```ruby
 describe Machine do
   specify { expect(Machine).to have_transition(a: :b).with_guard(MyGuard) }
-  specify { expect(Machine).to have_transition(a: :b).with_finalizer(MyFinalizer) }
-  specify { expect(Machine).to have_transition(a: :b).with_guard(MyGuard).with_finalizer(MyFinalizer) }
+  specify { expect(Machine).to have_transition(a: :b).with_concluder(MyConcluder) }
+  specify { expect(Machine).to have_transition(a: :b).with_guard(MyGuard).with_concluder(MyConcluder) }
   specify { expect(Machine).to have_transition(a: :b).with_guards(MyGuard, AnotherGuard) }
-  specify { expect(Machine).to have_transition(a: :b).with_finalizers(MyFinalizer, AnotherFinalizer) }
+  specify { expect(Machine).to have_transition(a: :b).with_concluders(MyConcluder, AnotherConcluder) }
   specify { expect(Machine).not_to have_transition(a: :c) }
 end
 ```

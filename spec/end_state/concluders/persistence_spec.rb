@@ -1,16 +1,16 @@
 require 'spec_helper'
 
 module EndState
-  module Finalizers
+  module Concluders
     describe Persistence do
-      subject(:finalizer) { Persistence.new(object, state, params) }
+      subject(:concluder) { Persistence.new(object, state, params) }
       let(:object) { double :object, save: nil }
       let(:state) { :b }
       let(:params) { {} }
 
       describe '#call' do
         it 'calls save on the object' do
-          finalizer.call
+          concluder.call
           expect(object).to have_received(:save)
         end
 
@@ -18,14 +18,14 @@ module EndState
           let(:object) { Object.new }
 
           it 'returns false' do
-            expect(finalizer.call).to be_false
+            expect(concluder.call).to be_false
           end
         end
       end
 
       describe '#rollback' do
         it 'calls save on the object' do
-          finalizer.rollback
+          concluder.rollback
           expect(object).to have_received(:save)
         end
 
@@ -33,7 +33,7 @@ module EndState
           let(:object) { Object.new }
 
           it 'returns true' do
-            expect(finalizer.rollback).to be_true
+            expect(concluder.rollback).to be_true
           end
         end
       end
