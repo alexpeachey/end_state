@@ -237,6 +237,22 @@ module EndState
       context 'when asking about a disallowed transition' do
         specify { expect(machine.can_transition? :c).to be_false }
       end
+
+      context 'when using :any_state' do
+        before { StateMachine.transition any_state: :d }
+
+        context 'and the initial state is :a' do
+          let(:object) { OpenStruct.new(state: :a) }
+
+          specify { expect(machine.can_transition? :d).to be_true }
+        end
+
+        context 'and the initial state is :b' do
+          let(:object) { OpenStruct.new(state: :b) }
+
+          specify { expect(machine.can_transition? :d).to be_true }
+        end
+      end
     end
 
     describe '#transition' do
@@ -271,6 +287,28 @@ module EndState
             it 'transitions the state stored as a string' do
               machine.transition :b
               expect(object.state).to eq 'b'
+            end
+          end
+
+          context 'and using :any_state' do
+            before { StateMachine.transition any_state: :d }
+
+            context 'and the initial state is :a' do
+              before { object.state = :a }
+
+              it 'transitions the state' do
+                machine.transition :d
+                expect(object.state).to eq :d
+              end
+            end
+
+            context 'and the initial state is :b' do
+              before { object.state = :b }
+
+              it 'transitions the state' do
+                machine.transition :d
+                expect(object.state).to eq :d
+              end
             end
           end
         end

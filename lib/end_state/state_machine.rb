@@ -80,7 +80,7 @@ module EndState
     def can_transition?(state, params = {})
       previous_state = self.state.to_sym
       state = state.to_sym
-      transition = self.class.transitions[{ previous_state => state }]
+      transition = transition_for(previous_state, state)
       return block_transistion(transition, state, :soft) unless transition
       transition.will_allow? state, params
     end
@@ -90,7 +90,7 @@ module EndState
       @success_messages = []
       previous_state = self.state ? self.state.to_sym : self.state
       state = state.to_sym
-      transition = self.class.transitions[{ previous_state => state }]
+      transition = transition_for(previous_state, state)
       return block_transistion(transition, state, mode) unless transition
       return guard_failed(state, mode) unless transition.allowed?(self, params)
       return false unless transition.action.new(self, state).call
@@ -130,6 +130,11 @@ module EndState
       return false unless transitions
       return invalid_event(event) unless transitions.map { |t| t.keys.first }.include?(state.to_sym)
       transitions.first.values.first
+    end
+
+    def transition_for(from, to)
+      self.class.transitions[{ from => to }] ||
+      self.class.transitions[{ any_state: to }]
     end
 
     def invalid_event(event)
