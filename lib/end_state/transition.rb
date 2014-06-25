@@ -30,12 +30,12 @@ module EndState
       @action = action
     end
 
-    def guard(guard)
-      guards << guard
+    def guard(*guards)
+      Array(guards).flatten.each { |guard| self.guards << guard }
     end
 
-    def concluder(concluder)
-      concluders << concluder
+    def concluder(*concluders)
+      Array(concluders).flatten.each { |concluder| self.concluders << concluder }
     end
 
     def persistence_on

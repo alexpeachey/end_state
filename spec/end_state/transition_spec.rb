@@ -24,9 +24,14 @@ module EndState
 
     describe '#guard' do
       let(:guard) { double :guard }
+      let(:another_guard) { double :another_guard }
 
       it 'adds a guard' do
         expect { transition.guard guard }.to change(transition.guards, :count).by(1)
+      end
+
+      it 'adds multiple guards' do
+        expect { transition.guard guard, another_guard }.to change(transition.guards, :count).by(2)
       end
     end
 
@@ -84,9 +89,14 @@ module EndState
 
     describe '#concluder' do
       let(:concluder) { double :concluder }
+      let(:another_concluder) { double :another_concluder }
 
       it 'adds a concluder' do
         expect { transition.concluder concluder }.to change(transition.concluders, :count).by(1)
+      end
+
+      it 'adds multiple concluders' do
+        expect { transition.concluder concluder, another_concluder }.to change(transition.concluders, :count).by(2)
       end
     end
 
