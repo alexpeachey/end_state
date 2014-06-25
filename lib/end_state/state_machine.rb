@@ -109,7 +109,7 @@ module EndState
       check_state = state_for_event(check_state) || check_state
       return false if check_state == :__invalid_event__
       if method.to_s.end_with?('!')
-        transition check_state, args[0]
+        transition check_state, (args[0] || {})
       else
         super
       end

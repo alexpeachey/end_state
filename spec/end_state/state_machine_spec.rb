@@ -189,6 +189,12 @@ module EndState
         expect(machine).to have_received(:transition).with(:b, { foo: 'bar', bar: 'foo' })
       end
 
+      it 'defaults params to {}' do
+        machine.stub(:transition)
+        machine.b!
+        expect(machine).to have_received(:transition).with(:b, {})
+      end
+
       it 'works with an event' do
         machine.go!
         expect(machine.state).to eq :b
