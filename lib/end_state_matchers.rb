@@ -4,13 +4,14 @@ module EndStateMatchers
   end
 
   class TransitionMatcher
-    attr_reader :transition, :machine, :failure_messages, :guards, :concluders
+    attr_reader :transition, :machine, :failure_messages, :guards, :concluders, :required_params
 
     def initialize(transition)
       @transition = transition
       @failure_messages = []
       @guards = []
       @concluders = []
+      @required_params = []
     end
 
     def matches?(actual)
@@ -32,7 +33,7 @@ module EndStateMatchers
     end
 
     def with_guards(*guards)
-      @guards += Array(guards)
+      @guards += Array(guards).flatten
       self
     end
 
@@ -42,7 +43,12 @@ module EndStateMatchers
     end
 
     def with_concluders(*concluders)
-      @concluders += Array(concluders)
+      @concluders += Array(concluders).flatten
+      self
+    end
+
+    def with_required_params(*params)
+      @required_params += Array(params).flatten
       self
     end
 
@@ -59,6 +65,7 @@ module EndStateMatchers
       if machine.transitions.keys.include? transition
         result = (result && verify_guards) if guards.any?
         result = (result && verify_concluders) if concluders.any?
+        result = (result && verify_required_params) if required_params.any?
         result
       else
         failure_messages << "expected that #{machine.name} would have transition :#{transition.keys.first} => :#{transition.values.first}"
@@ -82,6 +89,17 @@ module EndStateMatchers
       concluders.each do |concluder|
         unless machine.transitions[transition].concluders.any? { |f| f == concluder }
           failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have concluder #{concluder.name}"
+          result = false
+        end
+      end
+      result
+    end
+
+    def verify_required_params
+      result = true
+      required_params.each do |param|
+        unless machine.transitions[transition].required_params.any? { |p| p == param }
+          failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have required param #{param}"
           result = false
         end
       end

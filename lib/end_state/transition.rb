@@ -1,20 +1,24 @@
 module EndState
   class Transition
     attr_reader :state, :blocked_event_message
-    attr_accessor :action, :guards, :concluders
+    attr_accessor :action, :guards, :concluders, :allowed_params, :required_params
 
     def initialize(state)
       @state = state
       @action = Action
       @guards = []
       @concluders = []
+      @allowed_params = []
+      @required_params = []
     end
 
     def allowed?(object, params={})
+      raise "Missing params: #{missing_params(params).join(',')}" unless missing_params(params).empty?
       guards.all? { |guard| guard.new(object, state, params).allowed? }
     end
 
     def will_allow?(object, params={})
+      return false unless missing_params(params).empty?
       guards.all? { |guard| guard.new(object, state, params).will_allow? }
     end
 
@@ -42,6 +46,19 @@ module EndState
       concluder Concluders::Persistence
     end
 
+    def allow_params(*params)
+      Array(params).flatten.each do |param|
+        self.allowed_params << param unless self.allowed_params.include? param
+      end
+    end
+
+    def require_params(*params)
+      Array(params).flatten.each do |param|
+        self.allowed_params << param unless self.allowed_params.include? param
+        self.required_params << param unless self.required_params.include? param
+      end
+    end
+
     def blocked(message)
       @blocked_event_message = message
     end
@@ -62,6 +79,10 @@ module EndState
 
     def run_concluder(concluder, object, state, params)
       concluder.new(object, state, params).call
+    end
+
+    def missing_params(params)
+      required_params.select { |key| params[key].nil? }
     end
   end
 end

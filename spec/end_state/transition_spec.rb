@@ -45,19 +45,33 @@ module EndState
         before { guard_instance.stub(:allowed?).and_return(true) }
 
         specify { expect(transition.allowed? object).to be_true }
+
+        context 'when params are provided' do
+          it 'creates the guard with the params' do
+            transition.allowed? object, { foo: 'bar' }
+            expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
+          end
+
+          context 'and some params are required' do
+            before { transition.require_params :foo, :bar }
+
+            context 'and not all required are provided' do
+              it 'throws an exception' do
+                expect { transition.allowed? object, foo: 'something' }.to raise_error('Missing params: bar')
+              end
+            end
+
+            context 'and all required are provided' do
+              specify { expect(transition.allowed? object, foo: 1, bar: 2).to be_true }
+            end
+          end
+        end
       end
 
       context 'when not all guards pass' do
         before { guard_instance.stub(:allowed?).and_return(false) }
 
         specify { expect(transition.allowed? object).to be_false }
-      end
-
-      context 'when params are provided' do
-        it 'creates the guard with the params' do
-          transition.allowed? object, { foo: 'bar' }
-          expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
-        end
       end
     end
 
@@ -71,6 +85,25 @@ module EndState
         before { guard_instance.stub(:will_allow?).and_return(true) }
 
         specify { expect(transition.will_allow? object).to be_true }
+
+        context 'when params are provided' do
+          it 'creates the guard with the params' do
+            transition.will_allow? object, { foo: 'bar' }
+            expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
+          end
+
+          context 'and some params are required' do
+            before { transition.require_params :foo, :bar }
+
+            context 'and not all required are provided' do
+              specify { expect(transition.will_allow? object).to be_false }
+            end
+
+            context 'and all required are provided' do
+              specify { expect(transition.will_allow? object, foo: 1, bar: 2).to be_true }
+            end
+          end
+        end
       end
 
       context 'when not all guards pass' do
@@ -103,6 +136,22 @@ module EndState
     describe '#persistence_on' do
       it 'adds a Persistence concluder' do
         expect { transition.persistence_on }.to change(transition.concluders, :count).by(1)
+      end
+    end
+
+    describe '#allow_params' do
+      it 'adds supplied keys to the allowed_params array' do
+        expect { transition.allow_params :foo, :bar }.to change(transition.allowed_params, :count).by(2)
+      end
+    end
+
+    describe '#require_params' do
+      it 'adds supplied keys to the required_params array' do
+        expect { transition.require_params :foo, :bar }.to change(transition.required_params, :count).by(2)
+      end
+
+      it 'adds supplied keys to the allowed_params array' do
+        expect { transition.allow_params :foo, :bar }.to change(transition.allowed_params, :count).by(2)
       end
     end
 
