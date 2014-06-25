@@ -128,7 +128,8 @@ module EndState
     def state_for_event(event)
       transitions = self.class.events[event]
       return false unless transitions
-      return invalid_event(event) unless transitions.map { |t| t.keys.first }.include?(state.to_sym)
+      start_states = transitions.map { |t| t.keys.first }
+      return invalid_event(event) unless start_states.include?(state.to_sym) || start_states.include?(:any_state)
       transitions.first.values.first
     end
 

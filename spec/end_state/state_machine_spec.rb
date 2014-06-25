@@ -221,6 +221,17 @@ module EndState
           end
         end
       end
+
+      context 'when using any_state with an event' do
+        before do
+          StateMachine.transition any_state: :end, as: :jump_to_end
+        end
+
+        it 'transitions the state to :end' do
+          machine.jump_to_end!
+          expect(machine.state).to eq :end
+        end
+      end
     end
 
     describe '#can_transition?' do
