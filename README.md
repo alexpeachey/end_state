@@ -73,6 +73,28 @@ class Machine < EndState::StateMachine
 end
 ```
 
+## Special State - :any_state
+
+You can specify the special state `:any_state` as the beginning of a transition. This will allow
+the machine to transition to the new state specified from any actual state.
+
+```ruby
+class Machine < EndState::StateMachine
+  transition a: :b
+  transition b: :c
+  transition any_state: :d
+end
+
+machine = Machine.new(StatefulObject.new(:a))
+machine.d!      # true
+machine.state   # :d
+
+machine = Machine.new(StatefulObject.new(:a))
+machine.b!      # true
+machine.d!      # true
+machine.state   # :d
+```
+
 ## Guards
 
 Guards can be created by subclassing `EndState::Guard`. Your class will be provided access to:
@@ -228,6 +250,36 @@ machine.go!                 # => true
 machine.state               # => :b
 machine.go!                 # => false
 machine.failure_messages    # => ['Cannot go!']
+```
+
+## Parameters
+
+When calling a transition, you can optionally provide a hash of parameters which will be available to the guards
+and concluders you include in the transition definition.
+
+When defining a transition you can indicate what parameters you are expecting with `allow_params` and `require_params`.
+If you require any params then attempting to transition without them provided will raise an error. Specifying allowed
+params is purely for documentation purposes.
+
+```
+class Machine < EndState::StateMachine
+  transition a: :b do |t|
+    t.allow_params :foo, :bar
+  end
+end
+```
+
+```
+class Machine < EndState::StateMachine
+  transition a: :b do |t|
+    t.require_params :foo, :bar
+  end
+end
+
+machine = Machine.new(StatefulObject.new(:a))
+
+machine.b!                        # => error raised: 'Missing params: foo, bar'
+machine.b! foo: 1, bar: 'value'   # => true
 ```
 
 ## State storage
