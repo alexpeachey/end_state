@@ -58,7 +58,7 @@ machine.can_transition? :a  # => true
 machine.b!                  # => false
 machine.a!                  # => true
 machine.state               # => :a
-machine.go!                 # => :true
+machine.go!                 # => true
 machine.state               # => :b
 ```
 
@@ -234,10 +234,10 @@ end
 By using the `as` option in a transition definition you are creating an event representing that transition.
 This can allow you to exercise the machine in a more natural "verb" style interaction. When using `as` event
 definitions you can optionally set a `blocked` message on the transition. When the event is executed, if the
-machine is not in a state maching the initial state of the event, the message is added to the `failure_messages`
+machine is not in the initial state of the event, the message is added to the `failure_messages`
 array on the machine.
 
-```
+```ruby
 class Machine < EndState::StateMachine
   transition a: :b, as: :go do |t|
     t.blocked 'Cannot go!'
@@ -261,7 +261,7 @@ When defining a transition you can indicate what parameters you are expecting wi
 If you require any params then attempting to transition without them provided will raise an error. Specifying allowed
 params is purely for documentation purposes.
 
-```
+```ruby
 class Machine < EndState::StateMachine
   transition a: :b do |t|
     t.allow_params :foo, :bar
@@ -269,7 +269,7 @@ class Machine < EndState::StateMachine
 end
 ```
 
-```
+```ruby
 class Machine < EndState::StateMachine
   transition a: :b do |t|
     t.require_params :foo, :bar
