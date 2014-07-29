@@ -63,12 +63,6 @@ module EndState
       @blocked_event_message = message
     end
 
-    # Backward compatibility
-    # Finalizer is deprecated
-    alias_method :finalizers, :concluders
-    alias_method :finalize, :conclude
-    alias_method :finalizer, :concluder
-
     private
 
     def rollback(concluded, object, previous_state, params)

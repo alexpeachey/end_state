@@ -17,8 +17,4 @@ module EndState
       true
     end
   end
-
-  # Backward compatibility
-  # Finalizer is deprecated
-  Finalizer = Concluder
 end
