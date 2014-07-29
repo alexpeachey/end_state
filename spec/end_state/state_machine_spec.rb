@@ -211,8 +211,8 @@ module EndState
         context 'and all transitions are forced to run in :hard mode' do
           before { machine.class.treat_all_transitions_as_hard! }
 
-          it 'raises an InvalidEvent error' do
-            expect { machine.go }.to raise_error(InvalidEvent)
+          it 'raises an InvalidTransition error' do
+            expect { machine.go }.to raise_error(InvalidTransition)
           end
         end
       end
@@ -451,7 +451,7 @@ module EndState
           before { StateMachine.transition a: :b }
 
           it 'returns false' do
-            expect { machine.transition!(:b) }.to raise_error(UnknownTransition)
+            expect { machine.transition!(:b) }.to raise_error(InvalidTransition)
           end
         end
       end

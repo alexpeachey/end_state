@@ -151,7 +151,7 @@ module EndState
     end
 
     def __sm_invalid_event(event, mode)
-      fail InvalidEvent, "Transition by event: #{event} is invalid." if mode == :hard
+      fail InvalidTransition, "Transition by event: #{event} is invalid." if mode == :hard
       message = self.class.transitions[self.class.events[event].first].blocked_event_message
       @failure_messages = [message] if message
       :__invalid_event__
@@ -164,7 +164,7 @@ module EndState
 
     def __sm_block_transistion(transition, state, mode)
       if self.class.end_states.include? state
-        fail UnknownTransition, "The transition: #{object.state} => #{state} is unknown." if mode == :hard
+        fail InvalidTransition, "The transition: #{object.state} => #{state} is invalid." if mode == :hard
         return false
       end
       fail UnknownState, "The state: #{state} is unknown."
