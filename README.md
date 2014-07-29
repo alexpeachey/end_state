@@ -56,12 +56,12 @@ machine.state               # => :c
 machine.can_transition? :b  # => false
 machine.can_transition? :a  # => true
 machine.transition :b       # => false
-machine.transition! :b      # => raises UnknownTransition
+machine.transition! :b      # => raises InvalidTransition
 machine.transition :a       # => true
 machine.state               # => :a
 machine.go                  # => true
 machine.state               # => :b
-machine.go!                 # => raises InvalidEvent
+machine.go!                 # => raises InvalidTransition
 ```
 
 ## Initial State
@@ -253,7 +253,7 @@ machine.go                  # => true
 machine.state               # => :b
 machine.go                  # => false
 machine.failure_messages    # => ['Cannot go!']
-machine.go!                 # => raises InvalidEvent
+machine.go!                 # => raises InvalidTransition
 ```
 
 ## Parameters
