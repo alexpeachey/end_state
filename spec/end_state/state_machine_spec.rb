@@ -23,7 +23,7 @@ module EndState
       end
 
       it 'does not require a block' do
-        expect(StateMachine.transition(b: :c)).not_to raise_error
+        expect { StateMachine.transition(b: :c) }.not_to raise_error
       end
 
       it 'adds the transition to the state machine' do
@@ -89,13 +89,13 @@ module EndState
     describe '.store_states_as_strings!' do
       it 'sets the flag' do
         StateMachine.store_states_as_strings!
-        expect(StateMachine.store_states_as_strings).to be_true
+        expect(StateMachine.store_states_as_strings).to be true
       end
     end
 
     describe '#store_states_as_strings' do
       it 'is false by default' do
-        expect(StateMachine.store_states_as_strings).to be_false
+        expect(StateMachine.store_states_as_strings).to be false
       end
     end
 
@@ -136,15 +136,15 @@ module EndState
       context 'when the object has state :a' do
         let(:object) { OpenStruct.new(state: :a) }
 
-        specify { expect(machine.a?).to be_true }
-        specify { expect(machine.b?).to be_false }
+        specify { expect(machine.a?).to be true }
+        specify { expect(machine.b?).to be false }
       end
 
       context 'when the object has state :b' do
         let(:object) { OpenStruct.new(state: :b) }
 
-        specify { expect(machine.b?).to be_true }
-        specify { expect(machine.a?).to be_false }
+        specify { expect(machine.b?).to be true }
+        specify { expect(machine.a?).to be false }
       end
 
       context 'when the state shares a name with an event' do
@@ -153,7 +153,7 @@ module EndState
         context 'and the object, in that state, cannot transition on the event' do
           let(:object) { OpenStruct.new(state: :stop) }
 
-          specify { expect(machine.stop?).to be_true }
+          specify { expect(machine.stop?).to be true }
         end
       end
 
@@ -184,13 +184,13 @@ module EndState
       end
 
       it 'accepts params' do
-        machine.stub(:transition)
+        allow(machine).to receive(:transition)
         machine.b! foo: 'bar', bar: 'foo'
         expect(machine).to have_received(:transition).with(:b, { foo: 'bar', bar: 'foo' })
       end
 
       it 'defaults params to {}' do
-        machine.stub(:transition)
+        allow(machine).to receive(:transition)
         machine.b!
         expect(machine).to have_received(:transition).with(:b, {})
       end
@@ -242,11 +242,11 @@ module EndState
       end
 
       context 'when asking about an allowed transition' do
-        specify { expect(machine.can_transition? :b).to be_true }
+        specify { expect(machine.can_transition? :b).to be true }
       end
 
       context 'when asking about a disallowed transition' do
-        specify { expect(machine.can_transition? :c).to be_false }
+        specify { expect(machine.can_transition? :c).to be false }
       end
 
       context 'when using :any_state' do
@@ -255,13 +255,13 @@ module EndState
         context 'and the initial state is :a' do
           let(:object) { OpenStruct.new(state: :a) }
 
-          specify { expect(machine.can_transition? :d).to be_true }
+          specify { expect(machine.can_transition? :d).to be true }
         end
 
         context 'and the initial state is :b' do
           let(:object) { OpenStruct.new(state: :b) }
 
-          specify { expect(machine.can_transition? :d).to be_true }
+          specify { expect(machine.can_transition? :d).to be true }
         end
       end
     end
@@ -276,7 +276,7 @@ module EndState
           before { StateMachine.transition a: :b }
 
           it 'returns false' do
-            expect(machine.transition(:b)).to be_false
+            expect(machine.transition(:b)).to be false
           end
         end
       end
@@ -335,7 +335,7 @@ module EndState
 
           context 'and the object satisfies the guard' do
             before do
-              guard_instance.stub(:allowed?).and_return(true)
+              allow(guard_instance).to receive(:allowed?).and_return(true)
               object.state = :a
             end
 
@@ -347,7 +347,7 @@ module EndState
 
           context 'and the object does not satisfy the guard' do
             before do
-              guard_instance.stub(:allowed?).and_return(false)
+              allow(guard_instance).to receive(:allowed?).and_return(false)
               object.state = :a
             end
 
@@ -377,7 +377,7 @@ module EndState
 
           context 'and the concluder is successful' do
             before do
-              concluder_instance.stub(:call).and_return(true)
+              allow(concluder_instance).to receive(:call).and_return(true)
             end
 
             it 'transitions the state' do
@@ -388,7 +388,7 @@ module EndState
 
           context 'and the concluder fails' do
             before do
-              concluder_instance.stub(:call).and_return(false)
+              allow(concluder_instance).to receive(:call).and_return(false)
             end
 
             it 'does not transition the state' do
@@ -437,7 +437,7 @@ module EndState
 
           context 'and the object satisfies the guard' do
             before do
-              guard_instance.stub(:allowed?).and_return(true)
+              allow(guard_instance).to receive(:allowed?).and_return(true)
               object.state = :a
             end
 
@@ -449,7 +449,7 @@ module EndState
 
           context 'and the object does not satisfy the guard' do
             before do
-              guard_instance.stub(:allowed?).and_return(false)
+              allow(guard_instance).to receive(:allowed?).and_return(false)
               object.state = :a
             end
 
@@ -471,7 +471,7 @@ module EndState
 
           context 'and the concluder is successful' do
             before do
-              concluder_instance.stub(:call).and_return(true)
+              allow(concluder_instance).to receive(:call).and_return(true)
             end
 
             it 'transitions the state' do
@@ -482,7 +482,7 @@ module EndState
 
           context 'and the concluder fails' do
             before do
-              concluder_instance.stub(:call).and_return(false)
+              allow(concluder_instance).to receive(:call).and_return(false)
             end
 
             it 'does not transition the state' do

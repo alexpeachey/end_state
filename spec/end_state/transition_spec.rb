@@ -42,9 +42,9 @@ module EndState
       before { transition.guards << guard }
 
       context 'when all guards pass' do
-        before { guard_instance.stub(:allowed?).and_return(true) }
+        before { allow(guard_instance).to receive(:allowed?).and_return(true) }
 
-        specify { expect(transition.allowed? object).to be_true }
+        specify { expect(transition.allowed? object).to be true }
 
         context 'when params are provided' do
           it 'creates the guard with the params' do
@@ -62,16 +62,16 @@ module EndState
             end
 
             context 'and all required are provided' do
-              specify { expect(transition.allowed? object, foo: 1, bar: 2).to be_true }
+              specify { expect(transition.allowed? object, foo: 1, bar: 2).to be true }
             end
           end
         end
       end
 
       context 'when not all guards pass' do
-        before { guard_instance.stub(:allowed?).and_return(false) }
+        before { allow(guard_instance).to receive(:allowed?).and_return(false) }
 
-        specify { expect(transition.allowed? object).to be_false }
+        specify { expect(transition.allowed? object).to be false }
       end
     end
 
@@ -82,9 +82,9 @@ module EndState
       before { transition.guards << guard }
 
       context 'when all guards pass' do
-        before { guard_instance.stub(:will_allow?).and_return(true) }
+        before { allow(guard_instance).to receive(:will_allow?).and_return(true) }
 
-        specify { expect(transition.will_allow? object).to be_true }
+        specify { expect(transition.will_allow? object).to be true }
 
         context 'when params are provided' do
           it 'creates the guard with the params' do
@@ -96,20 +96,20 @@ module EndState
             before { transition.require_params :foo, :bar }
 
             context 'and not all required are provided' do
-              specify { expect(transition.will_allow? object).to be_false }
+              specify { expect(transition.will_allow? object).to be false }
             end
 
             context 'and all required are provided' do
-              specify { expect(transition.will_allow? object, foo: 1, bar: 2).to be_true }
+              specify { expect(transition.will_allow? object, foo: 1, bar: 2).to be true }
             end
           end
         end
       end
 
       context 'when not all guards pass' do
-        before { guard_instance.stub(:will_allow?).and_return(false) }
+        before { allow(guard_instance).to receive(:will_allow?).and_return(false) }
 
-        specify { expect(transition.will_allow? object).to be_false }
+        specify { expect(transition.will_allow? object).to be false }
       end
 
       context 'when params are provided' do
@@ -160,20 +160,20 @@ module EndState
       let(:concluder_instance) { double :concluder_instance, call: nil, rollback: nil }
       let(:object) { OpenStruct.new(state: :b) }
       before do
-        object.stub_chain(:class, :store_states_as_strings).and_return(false)
+        allow(object).to receive_message_chain(:class, store_states_as_strings: false)
         transition.concluders << concluder
       end
 
       context 'when all concluders succeed' do
-        before { concluder_instance.stub(:call).and_return(true) }
+        before { allow(concluder_instance).to receive(:call).and_return(true) }
 
-        specify { expect(transition.conclude object, :a).to be_true }
+        specify { expect(transition.conclude object, :a).to be true }
       end
 
       context 'when not all concluders succeed' do
-        before { concluder_instance.stub(:call).and_return(false) }
+        before { allow(concluder_instance).to receive(:call).and_return(false) }
 
-        specify { expect(transition.conclude object, :a).to be_false }
+        specify { expect(transition.conclude object, :a).to be false }
 
         it 'rolls them back' do
           transition.conclude object, :a
