@@ -6,7 +6,7 @@ module EndState
     let(:object) { OpenStruct.new(state: nil) }
     let(:state) { :a }
 
-    before { object.stub_chain(:class, :store_states_as_strings).and_return(false) }
+    before { allow(object).to receive_message_chain(:class, store_states_as_strings: false) }
 
     describe '#call' do
       it 'changes the state to the new state' do

@@ -12,9 +12,9 @@ module EndState
     def draw
       machine.transitions.keys.each do |t|
         left, right = t.to_a.flatten
-        nodes[left] ||= add_node(left.to_s)
-        nodes[right] ||= add_node(right.to_s)
-        edge = add_edge nodes[left], nodes[right]
+        nodes[left] ||= add_nodes(left.to_s)
+        nodes[right] ||= add_nodes(right.to_s)
+        edge = add_edges nodes[left], nodes[right]
         if event_labels
           event = machine.events.detect do |event, transition|
             transition.include? t

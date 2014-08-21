@@ -25,7 +25,7 @@ end
 
 class Machine < EndState::StateMachine
   transition a: :b do |t|
-    t.guard Easy, important_param: 'FOO!'
+    t.guard Easy
     t.persistence_on
   end
 
@@ -35,7 +35,7 @@ class Machine < EndState::StateMachine
   end
 
   transition [:b, :c] => :a do |t|
-    t.concluder NoOp, not_very_important_param: 'Ignore me'
+    t.concluder NoOp
     t.persistence_on
   end
 end

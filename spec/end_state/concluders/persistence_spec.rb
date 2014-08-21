@@ -18,7 +18,7 @@ module EndState
           let(:object) { Object.new }
 
           it 'returns false' do
-            expect(concluder.call).to be_false
+            expect(concluder.call).to be false
           end
         end
       end
@@ -33,7 +33,7 @@ module EndState
           let(:object) { Object.new }
 
           it 'returns true' do
-            expect(concluder.rollback).to be_true
+            expect(concluder.rollback).to be true
           end
         end
       end

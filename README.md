@@ -51,15 +51,17 @@ machine = Machine.new(StatefulObject.new(:a))
 machine.transition :b       # => true
 machine.state               # => :b
 machine.b?                  # => true
-machine.c!                  # => true
+machine.transition :c       # => true
 machine.state               # => :c
 machine.can_transition? :b  # => false
 machine.can_transition? :a  # => true
-machine.b!                  # => false
-machine.a!                  # => true
+machine.transition :b       # => false
+machine.transition! :b      # => raises InvalidTransition
+machine.transition :a       # => true
 machine.state               # => :a
-machine.go!                 # => true
+machine.go                  # => true
 machine.state               # => :b
+machine.go!                 # => raises InvalidTransition
 ```
 
 ## Initial State
@@ -86,13 +88,13 @@ class Machine < EndState::StateMachine
 end
 
 machine = Machine.new(StatefulObject.new(:a))
-machine.d!      # true
-machine.state   # :d
+machine.transition :d      # true
+machine.state              # :d
 
 machine = Machine.new(StatefulObject.new(:a))
-machine.b!      # true
-machine.d!      # true
-machine.state   # :d
+machine.transition :b      # true
+machine.transition :d      # true
+machine.state              # :d
 ```
 
 ## Guards
@@ -235,7 +237,8 @@ By using the `as` option in a transition definition you are creating an event re
 This can allow you to exercise the machine in a more natural "verb" style interaction. When using `as` event
 definitions you can optionally set a `blocked` message on the transition. When the event is executed, if the
 machine is not in the initial state of the event, the message is added to the `failure_messages`
-array on the machine.
+array on the machine. Events, like `transition` have both a standard and a bang (`!`) style. The bang style
+will raise an exception if there is a problem.
 
 ```ruby
 class Machine < EndState::StateMachine
@@ -246,10 +249,11 @@ end
 
 machine = Machine.new(StatefulObject.new(:a))
 
-machine.go!                 # => true
+machine.go                  # => true
 machine.state               # => :b
-machine.go!                 # => false
+machine.go                  # => false
 machine.failure_messages    # => ['Cannot go!']
+machine.go!                 # => raises InvalidTransition
 ```
 
 ## Parameters
@@ -263,7 +267,7 @@ params is purely for documentation purposes.
 
 ```ruby
 class Machine < EndState::StateMachine
-  transition a: :b do |t|
+  transition a: :b, as: :go do |t|
     t.allow_params :foo, :bar
   end
 end
@@ -271,15 +275,18 @@ end
 
 ```ruby
 class Machine < EndState::StateMachine
-  transition a: :b do |t|
+  transition a: :b, as: :go do |t|
     t.require_params :foo, :bar
   end
 end
 
 machine = Machine.new(StatefulObject.new(:a))
+machine.transition :b                         # => error raised: 'Missing params: foo, bar'
+machine.transition :b, foo: 1, bar: 'value'   # => true
 
-machine.b!                        # => error raised: 'Missing params: foo, bar'
-machine.b! foo: 1, bar: 'value'   # => true
+machine = Machine.new(StatefulObject.new(:a))
+machine.go                        # => error raised: 'Missing params: foo, bar'
+machine.go foo: 1, bar: 'value'   # => true
 ```
 
 ## State storage
