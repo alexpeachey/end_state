@@ -49,6 +49,22 @@ module EndState
               expect(StateMachine.events[:go]).to eq [{ a: :b }, { c: :d }]
             end
           end
+
+          context 'another single transition with as that conflicts' do
+            it 'raises an error' do
+              expect{ StateMachine.transition({a: :c, as: :go}) }.to raise_error EventConflict,
+                'Attempting to define :go as transitioning from :a => :c when :a => :b already exists. ' \
+                'You cannot define multiple transitions from a single state with the same event name.'
+            end
+          end
+
+          context 'another single transition with as that conflicts' do
+            it 'raises an error' do
+              expect{ StateMachine.transition({any_state: :c, as: :go}) }.to raise_error EventConflict,
+                'Attempting to define :go as transitioning from :any_state => :c when :a => :b already exists. ' \
+                'You cannot define multiple transitions from a single state with the same event name.'
+            end
+          end
         end
       end
 
@@ -232,59 +248,123 @@ module EndState
 
     describe '#{event}' do
       let(:object) { OpenStruct.new(state: :a) }
-      before do
-        StateMachine.transition a: :b, as: :go do |t|
-          t.blocked 'Invalid event!'
+
+      context 'single transition' do
+        before do
+          StateMachine.transition a: :b, as: :go do |t|
+            t.blocked 'Invalid event!'
+          end
         end
-      end
 
-      it 'transitions the state' do
-        machine.go
-        expect(machine.state).to eq :b
-      end
-
-      it 'accepts params' do
-        allow(machine).to receive(:transition)
-        machine.go foo: 'bar', bar: 'foo'
-        expect(machine).to have_received(:transition).with(:b, { foo: 'bar', bar: 'foo' }, :soft)
-      end
-
-      it 'defaults params to {}' do
-        allow(machine).to receive(:transition)
-        machine.go
-        expect(machine).to have_received(:transition).with(:b, {}, :soft)
-      end
-
-      context 'when the intial state is :c' do
-        let(:object) { OpenStruct.new(state: :c) }
-
-        it 'blocks invalid events' do
+        it 'transitions the state' do
           machine.go
-          expect(machine.state).to eq :c
+          expect(machine.state).to eq :b
         end
 
-        it 'adds a failure message specified by blocked' do
+        it 'accepts params' do
+          allow(machine).to receive(:transition)
+          machine.go foo: 'bar', bar: 'foo'
+          expect(machine).to have_received(:transition).with(:b, { foo: 'bar', bar: 'foo' }, :soft)
+        end
+
+        it 'defaults params to {}' do
+          allow(machine).to receive(:transition)
           machine.go
-          expect(machine.failure_messages).to eq ['Invalid event!']
+          expect(machine).to have_received(:transition).with(:b, {}, :soft)
         end
 
-        context 'and all transitions are forced to run in :hard mode' do
-          before { machine.class.treat_all_transitions_as_hard! }
+        context 'when the intial state is :c' do
+          let(:object) { OpenStruct.new(state: :c) }
 
-          it 'raises an InvalidTransition error' do
-            expect { machine.go }.to raise_error(InvalidTransition)
+          it 'blocks invalid events' do
+            machine.go
+            expect(machine.state).to eq :c
+          end
+
+          it 'adds a failure message specified by blocked' do
+            machine.go
+            expect(machine.failure_messages).to eq ['Invalid event!']
+          end
+
+          context 'and all transitions are forced to run in :hard mode' do
+            before { machine.class.treat_all_transitions_as_hard! }
+
+            it 'raises an InvalidTransition error' do
+              expect { machine.go }.to raise_error(InvalidTransition)
+            end
+          end
+        end
+
+        context 'when using any_state with an event' do
+          before do
+            StateMachine.transition any_state: :end, as: :jump_to_end
+          end
+
+          it 'transitions the state to :end' do
+            machine.jump_to_end
+            expect(machine.state).to eq :end
           end
         end
       end
 
-      context 'when using any_state with an event' do
+      context 'multiple start states' do
         before do
-          StateMachine.transition any_state: :end, as: :jump_to_end
+          StateMachine.transition [:a, :b] => :c, as: :go do |t|
+            t.blocked 'Invalid event!'
+          end
         end
 
-        it 'transitions the state to :end' do
-          machine.jump_to_end
-          expect(machine.state).to eq :end
+        context 'initial state is :a' do
+          let(:object) { OpenStruct.new(state: :a) }
+
+          it 'transitions the state' do
+            machine.go
+            expect(machine.state).to eq :c
+          end
+        end
+
+        context 'initial state is :b' do
+          let(:object) { OpenStruct.new(state: :b) }
+
+          it 'transitions the state' do
+            machine.go
+            expect(machine.state).to eq :c
+          end
+        end
+
+        context 'initial state is :d' do
+          let(:object) { OpenStruct.new(state: :b) }
+
+          it 'transitions the state' do
+            machine.go
+            expect(machine.state).to eq :c
+          end
+        end
+      end
+
+      context 'multiple transitions' do
+        before do
+          StateMachine.transition a: :b, c: :d, as: :go do |t|
+            t.blocked 'Invalid event!'
+          end
+        end
+
+        context 'initial state is :a' do
+          let(:object) { OpenStruct.new(state: :a) }
+
+          it 'transitions the state' do
+            machine.go
+            expect(machine.state).to eq :b
+          end
+        end
+
+        context 'initial state is :b' do
+          let(:object) { OpenStruct.new(state: :c) }
+
+          it 'transitions the state' do
+            machine.go
+            expect(machine.state).to eq :d
+          end
         end
       end
     end

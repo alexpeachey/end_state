@@ -36,15 +36,15 @@ module EndState
 
     def self.transition(state_map)
       transition_alias = state_map.delete(:as)
-      events[transition_alias.to_sym] ||= [] unless transition_alias.nil?
+      transition_alias = transition_alias.to_sym unless transition_alias.nil?
 
-      state_map.each do |initial_states, final_state|
-        transition = Transition.new(final_state)
+      state_map.each do |start_states, end_state|
+        transition = Transition.new(end_state)
 
-        Array(initial_states).each do |initial_state|
-          key = { initial_state.to_sym => final_state.to_sym }
-          transitions[key] = transition
-          events[transition_alias.to_sym] << key unless transition_alias.nil?
+        Array(start_states).each do |start_state|
+          state_mapping = StateMapping[start_state.to_sym => end_state.to_sym]
+          transitions[state_mapping] = transition
+          __sm_add_event(transition_alias, state_mapping) unless transition_alias.nil?
         end
 
         yield transition if block_given?
@@ -69,11 +69,11 @@ module EndState
     end
 
     def self.start_states
-      transitions.keys.map { |state_map| state_map.keys.first }.uniq
+      transitions.keys.map(&:start_state).uniq
     end
 
     def self.end_states
-      transitions.keys.map { |state_map| state_map.values.first }.uniq
+      transitions.keys.map(&:end_state).uniq
     end
 
     def object
@@ -146,11 +146,12 @@ module EndState
     end
 
     def __sm_state_for_event(event, mode)
-      transitions = self.class.events[event]
-      return false unless transitions
-      start_states = transitions.map { |t| t.keys.first }
-      return __sm_invalid_event(event, mode) unless start_states.include?(state.to_sym) || start_states.include?(:any_state)
-      transitions.first.values.first
+      state_mappings = self.class.events[event]
+      return false unless state_mappings
+      state_mappings.each do |state_mapping|
+        return state_mapping.end_state if state_mapping.matches_start_state?(state.to_sym)
+      end
+      return __sm_invalid_event(event, mode)
     end
 
     def __sm_invalid_event(event, mode)
@@ -181,6 +182,21 @@ module EndState
     def __sm_conclude_failed(state, mode)
       return false unless mode == :hard
       fail ConcluderFailed, "The transition to #{state} was rolled back: #{failure_messages.join(', ')}"
+    end
+
+    def self.__sm_add_event(event, state_mapping)
+      events[event] ||= []
+      conflicting_mapping = events[event].find{ |sm| sm.conflicts?(state_mapping) }
+      if conflicting_mapping
+        message =
+          "Attempting to define :#{event} as transitioning from " \
+          ":#{state_mapping.start_state} => :#{state_mapping.end_state} when " \
+          ":#{conflicting_mapping.start_state} => :#{conflicting_mapping.end_state} already exists. " \
+          "You cannot define multiple transitions from a single state with the same event name."
+
+        fail EventConflict, message
+      end
+      events[event] << state_mapping
     end
   end
 end
