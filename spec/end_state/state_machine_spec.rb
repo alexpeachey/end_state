@@ -14,26 +14,86 @@ module EndState
     end
 
     describe '.transition' do
-      let(:state_map) { { a: :b } }
-      let(:yielded) { OpenStruct.new(transition: nil) }
-      before { StateMachine.transition(state_map) { |transition| yielded.transition = transition } }
+      let(:options) { { a: :b } }
 
-      it 'yields a transition for the supplied end state' do
-        expect(yielded.transition.state).to eq :b
+      before do
+        @transitions = []
+        StateMachine.transition(options) { |transition| @transitions << transition }
       end
 
       it 'does not require a block' do
-        expect { StateMachine.transition(b: :c) }.not_to raise_error
+        expect { StateMachine.transition(options) }.not_to raise_error
       end
 
-      it 'adds the transition to the state machine' do
-        expect(StateMachine.transitions[state_map]).to eq yielded.transition
+      context 'single transition' do
+        it 'yields a transition for the supplied end state' do
+          expect(@transitions.count).to eq 1
+          expect(@transitions[0].state).to eq :b
+        end
+
+        it 'adds the transition to the state machine' do
+          expect(StateMachine.transitions[a: :b]).to eq @transitions[0]
+        end
+
+        context 'with as' do
+          let(:options) { { a: :b, as: :go } }
+
+          it 'creates an alias' do
+            expect(StateMachine.events[:go]).to eq [{ a: :b }]
+          end
+
+          context 'another single transition with as' do
+            before { StateMachine.transition({c: :d, as: :go}) }
+
+            it 'appends to the event' do
+              expect(StateMachine.events[:go]).to eq [{ a: :b }, { c: :d }]
+            end
+          end
+        end
       end
 
-      context 'when the :as option is used' do
-        it 'creates an alias' do
-          StateMachine.transition(state_map.merge(as: :go))
-          expect(StateMachine.events[:go]).to eq [{ a: :b }]
+      context 'multiple start states' do
+        let(:options) { { [:a, :b] => :c } }
+
+        it 'yields each transition for the supplied end state' do
+          expect(@transitions.count).to eq 1
+          expect(@transitions[0].state).to eq :c
+        end
+
+        it 'adds the transitions to the state machine' do
+          expect(StateMachine.transitions[a: :c]).to eq @transitions[0]
+          expect(StateMachine.transitions[b: :c]).to eq @transitions[0]
+        end
+
+        context 'with as' do
+          let(:options) { { [:a, :b] => :c, as: :go } }
+
+          it 'creates an alias' do
+            expect(StateMachine.events[:go]).to eq [{ a: :c }, { b: :c }]
+          end
+        end
+      end
+
+      context 'multiple transitions' do
+        let(:options) { { a: :b, c: :d } }
+
+        it 'yields each transition for the supplied end state' do
+          expect(@transitions.count).to eq 2
+          expect(@transitions[0].state).to eq :b
+          expect(@transitions[1].state).to eq :d
+        end
+
+        it 'adds the transitions to the state machine' do
+          expect(StateMachine.transitions[a: :b]).to eq @transitions[0]
+          expect(StateMachine.transitions[c: :d]).to eq @transitions[1]
+        end
+
+        context 'with as' do
+          let(:options) { { a: :b, c: :d, as: :go } }
+
+          it 'creates an alias' do
+            expect(StateMachine.events[:go]).to eq [{ a: :b }, { c: :d }]
+          end
         end
       end
     end

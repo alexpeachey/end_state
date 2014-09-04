@@ -35,17 +35,20 @@ module EndState
     end
 
     def self.transition(state_map)
-      initial_states = Array(state_map.keys.first)
-      final_state = state_map.values.first
-      transition_alias = state_map[:as] if state_map.keys.length > 1
-      transition = Transition.new(final_state)
-      initial_states.each do |state|
-        transitions[{ state.to_sym => final_state.to_sym }] = transition
+      transition_alias = state_map.delete(:as)
+      events[transition_alias.to_sym] ||= [] unless transition_alias.nil?
+
+      state_map.each do |initial_states, final_state|
+        transition = Transition.new(final_state)
+
+        Array(initial_states).each do |initial_state|
+          key = { initial_state.to_sym => final_state.to_sym }
+          transitions[key] = transition
+          events[transition_alias.to_sym] << key unless transition_alias.nil?
+        end
+
+        yield transition if block_given?
       end
-      unless transition_alias.nil?
-        events[transition_alias.to_sym] = initial_states.map { |s| { s.to_sym => final_state.to_sym } }
-      end
-      yield transition if block_given?
     end
 
     def self.transitions
