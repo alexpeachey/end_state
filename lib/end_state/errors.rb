@@ -4,4 +4,5 @@ module EndState
   class InvalidTransition < Error; end
   class GuardFailed < Error; end
   class ConcluderFailed < Error; end
+  class EventConflict < Error; end
 end

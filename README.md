@@ -26,12 +26,15 @@ Or install it yourself as:
 ## StateMachine
 
 Create a state machine by subclassing `EndState::StateMachine`.
+Transitions can be named by adding an `:as` option.
 
 ```ruby
 class Machine < EndState::StateMachine
-  transition a: :b, as: :go
-  transition b: :c
-  transition [:b, :c] => :a
+  transition parked: :idling, as: :start
+  transition idling: :first_gear, first_gear: :second_gear, second_gear: :third_gear, as: :shift_up
+  transition third_gear: :second_gear, second_gear: :first_gear, as: shift_down
+  transition first_gear: :idling, as: idle
+  transition [:idling, :first_gear] => :parked, as: :park
 end
 ```
 
@@ -46,22 +49,24 @@ class StatefulObject
   end
 end
 
-machine = Machine.new(StatefulObject.new(:a))
+machine = Machine.new(StatefulObject.new(:parked))
 
-machine.transition :b       # => true
-machine.state               # => :b
-machine.b?                  # => true
-machine.transition :c       # => true
-machine.state               # => :c
-machine.can_transition? :b  # => false
-machine.can_transition? :a  # => true
-machine.transition :b       # => false
-machine.transition! :b      # => raises InvalidTransition
-machine.transition :a       # => true
-machine.state               # => :a
-machine.go                  # => true
-machine.state               # => :b
-machine.go!                 # => raises InvalidTransition
+machine.transition :idling            # => true
+machine.state                         # => :idling
+machine.idling?                       # => true
+machine.transition :first_gear        # => true
+machine.transition :second_gear       # => true
+machine.transition :third_gear        # => true
+machine.state                         # => :third_gear
+machine.can_transition? :first_gear   # => false
+machine.can_transition? :second_gear  # => true
+machine.transition :first_gear        # => false
+machine.transition! :first_gear       # => raises InvalidTransition
+machine.shift_down                    # => true
+machine.shift_up                      # => true
+machine.state                         # => :third_gear
+machine.park                          # => false
+machine.park!                         # => raises InvalidTransition
 ```
 
 ## Initial State
@@ -82,19 +87,19 @@ the machine to transition to the new state specified from any actual state.
 
 ```ruby
 class Machine < EndState::StateMachine
-  transition a: :b
-  transition b: :c
-  transition any_state: :d
+  transition parked: :idling
+  transition idling: :first_gear
+  transition any_state: :crashed
 end
 
-machine = Machine.new(StatefulObject.new(:a))
-machine.transition :d      # true
-machine.state              # :d
+machine = Machine.new(StatefulObject.new(:parked))
+machine.transition :crashed  # true
+machine.state                # :crashed
 
-machine = Machine.new(StatefulObject.new(:a))
-machine.transition :b      # true
-machine.transition :d      # true
-machine.state              # :d
+machine = Machine.new(StatefulObject.new(:parked))
+machine.transition :idling   # true
+machine.transition :crashed  # true
+machine.state                # :crashed
 ```
 
 ## Guards
