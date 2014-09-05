@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Originate/end_state.svg?branch=master)](https://travis-ci.org/Originate/end_state)
+
 # EndState
 
 EndState is an unobtrusive way to add state machines to your application.
