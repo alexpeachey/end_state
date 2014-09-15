@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/Originate/end_state.svg?branch=master)](https://travis-ci.org/Originate/end_state)
+[![Code Climate](https://codeclimate.com/github/Originate/end_state/badges/gpa.svg)](https://codeclimate.com/github/Originate/end_state)
 
 # EndState
 
