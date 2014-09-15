@@ -3,7 +3,7 @@ require 'spec_helper'
 module EndState
   describe Concluder do
     subject(:concluder) { Concluder.new(object, state, params) }
-    let(:object) { Struct.new('Machine', :failure_messages, :success_messages, :state, :store_states_as_strings).new }
+    let(:object) { OpenStruct.new(failure_messages: [], success_messages: []) }
     let(:state) { :a }
     let(:params) { {} }
     before do

@@ -38,21 +38,20 @@ module EndState
       transition_alias = state_map.delete(:as)
       transition_alias = transition_alias.to_sym unless transition_alias.nil?
 
-      state_map.each do |start_states, end_state|
-        transition = Transition.new(end_state)
+      configuration = TransitionConfiguration.new
+      yield configuration if block_given?
 
+      state_map.each do |start_states, end_state|
         Array(start_states).each do |start_state|
           state_mapping = StateMapping[start_state.to_sym => end_state.to_sym]
-          transitions[state_mapping] = transition
+          transition_configurations[state_mapping] = configuration
           __sm_add_event(transition_alias, state_mapping) unless transition_alias.nil?
         end
-
-        yield transition if block_given?
       end
     end
 
-    def self.transitions
-      @transitions ||= {}
+    def self.transition_configurations
+      @transition_configurations ||= {}
     end
 
     def self.events
@@ -69,11 +68,11 @@ module EndState
     end
 
     def self.start_states
-      transitions.keys.map(&:start_state).uniq
+      transition_configurations.keys.map(&:start_state).uniq
     end
 
     def self.end_states
-      transitions.keys.map(&:end_state).uniq
+      transition_configurations.keys.map(&:end_state).uniq
     end
 
     def object
@@ -81,25 +80,14 @@ module EndState
     end
 
     def can_transition?(state, params = {})
-      previous_state = self.state.to_sym
-      state = state.to_sym
-      transition = __sm_transition_for(previous_state, state)
-      return __sm_block_transistion(transition, state, :soft) unless transition
-      transition.will_allow? state, params
+      return __sm_block_transistion(state, :soft) unless __sm_transition_configuration_for(self.state, state)
+      __sm_transition_for(state).will_allow?(params)
     end
 
     def transition(state, params = {}, mode = self.class.mode)
-      @failure_messages = []
-      @success_messages = []
-      previous_state = self.state ? self.state.to_sym : self.state
-      state = state.to_sym
-      transition = __sm_transition_for(previous_state, state)
-      mode = __sm_actual_mode(mode)
-      return __sm_block_transistion(transition, state, mode) unless transition
-      return __sm_guard_failed(state, mode) unless transition.allowed?(self, params)
-      return false unless transition.action.new(self, state).call
-      return __sm_conclude_failed(state, mode) unless transition.conclude(self, previous_state, params)
-      true
+      @failure_messages = @success_messages = []
+      return __sm_block_transistion(state, mode) unless __sm_transition_configuration_for(self.state, state)
+      __sm_transition_for(state, mode).call(params)
     end
 
     def transition!(state, params = {})
@@ -156,32 +144,30 @@ module EndState
 
     def __sm_invalid_event(event, mode)
       fail InvalidTransition, "Transition by event: #{event} is invalid." if mode == :hard
-      message = self.class.transitions[self.class.events[event].first].blocked_event_message
+      message = self.class.transition_configurations[self.class.events[event].first].blocked_event_message
       @failure_messages = [message] if message
       :__invalid_event__
     end
 
-    def __sm_transition_for(from, to)
-      self.class.transitions[{ from => to }] ||
-      self.class.transitions[{ any_state: to }]
+    def __sm_transition_configuration_for(from, to)
+      self.class.transition_configurations[{ from => to }] ||
+      self.class.transition_configurations[{ any_state: to }]
     end
 
-    def __sm_block_transistion(transition, state, mode)
+    def __sm_transition_for(state, mode = self.class.mode)
+      from = self.state
+      to = state.to_sym
+      configuration = __sm_transition_configuration_for(from, to)
+      mode = __sm_actual_mode(mode)
+      Transition.new(self, from, to, configuration, mode)
+    end
+
+    def __sm_block_transistion(state, mode)
       if self.class.end_states.include? state
         fail InvalidTransition, "The transition: #{object.state} => #{state} is invalid." if mode == :hard
         return false
       end
       fail UnknownState, "The state: #{state} is unknown."
-    end
-
-    def __sm_guard_failed(state, mode)
-      return false unless mode == :hard
-      fail GuardFailed, "The transition to #{state} was blocked: #{failure_messages.join(', ')}"
-    end
-
-    def __sm_conclude_failed(state, mode)
-      return false unless mode == :hard
-      fail ConcluderFailed, "The transition to #{state} was rolled back: #{failure_messages.join(', ')}"
     end
 
     def self.__sm_add_event(event, state_mapping)

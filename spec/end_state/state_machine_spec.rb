@@ -6,7 +6,7 @@ module EndState
     subject(:machine) { StateMachine.new(object) }
     let(:object) { OpenStruct.new(state: nil) }
     before do
-      StateMachine.instance_variable_set '@transitions'.to_sym, nil
+      StateMachine.instance_variable_set '@transition_configurations'.to_sym, nil
       StateMachine.instance_variable_set '@events'.to_sym, nil
       StateMachine.instance_variable_set '@store_states_as_strings'.to_sym, nil
       StateMachine.instance_variable_set '@initial_state'.to_sym, :__nil__
@@ -17,8 +17,8 @@ module EndState
       let(:options) { { a: :b } }
 
       before do
-        @transitions = []
-        StateMachine.transition(options) { |transition| @transitions << transition }
+        @transition_configuration = nil
+        StateMachine.transition(options) { |tc| @transition_configuration = tc }
       end
 
       it 'does not require a block' do
@@ -26,13 +26,8 @@ module EndState
       end
 
       context 'single transition' do
-        it 'yields a transition for the supplied end state' do
-          expect(@transitions.count).to eq 1
-          expect(@transitions[0].state).to eq :b
-        end
-
-        it 'adds the transition to the state machine' do
-          expect(StateMachine.transitions[a: :b]).to eq @transitions[0]
+        it 'yields a transition configuraton' do
+          expect(@transition_configuration).to be_a TransitionConfiguration
         end
 
         context 'with as' do
@@ -71,14 +66,8 @@ module EndState
       context 'multiple start states' do
         let(:options) { { [:a, :b] => :c } }
 
-        it 'yields each transition for the supplied end state' do
-          expect(@transitions.count).to eq 1
-          expect(@transitions[0].state).to eq :c
-        end
-
-        it 'adds the transitions to the state machine' do
-          expect(StateMachine.transitions[a: :c]).to eq @transitions[0]
-          expect(StateMachine.transitions[b: :c]).to eq @transitions[0]
+        it 'yields a transition configuraton' do
+          expect(@transition_configuration).to be_a TransitionConfiguration
         end
 
         context 'with as' do
@@ -93,15 +82,8 @@ module EndState
       context 'multiple transitions' do
         let(:options) { { a: :b, c: :d } }
 
-        it 'yields each transition for the supplied end state' do
-          expect(@transitions.count).to eq 2
-          expect(@transitions[0].state).to eq :b
-          expect(@transitions[1].state).to eq :d
-        end
-
-        it 'adds the transitions to the state machine' do
-          expect(StateMachine.transitions[a: :b]).to eq @transitions[0]
-          expect(StateMachine.transitions[c: :d]).to eq @transitions[1]
+        it 'yields a transition configuraton' do
+          expect(@transition_configuration).to be_a TransitionConfiguration
         end
 
         context 'with as' do
@@ -612,8 +594,9 @@ module EndState
           let(:guard) { double :guard, new: guard_instance }
           let(:guard_instance) { double :guard_instance, allowed?: nil }
           before do
-            StateMachine.transition a: :b
-            StateMachine.transitions[{ a: :b }].guards << guard
+            StateMachine.transition a: :b do |t|
+              t.guard guard
+            end
           end
 
           context 'and the object satisfies the guard' do
