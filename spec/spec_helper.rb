@@ -1,5 +1,10 @@
-require 'simplecov'
-SimpleCov.start
+if ENV['TRAVIS']
+  require 'coveralls'
+  Coveralls.wear!
+else
+  require 'simplecov'
+  SimpleCov.start
+end
 
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'end_state'
