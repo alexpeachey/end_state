@@ -3,66 +3,43 @@ require 'ostruct'
 
 module EndState
   describe Transition do
-    subject(:transition) { Transition.new(state) }
-    let(:state) { :a }
-
-    describe '#custom_action' do
-      let(:custom) { double :custom }
-
-      it 'sets the action' do
-        transition.custom_action custom
-        expect(transition.action).to eq custom
-      end
-    end
-
-    describe '#blocked' do
-      it 'sets the blocked event message' do
-        transition.blocked 'This is blocked.'
-        expect(transition.blocked_event_message).to eq 'This is blocked.'
-      end
-    end
-
-    describe '#guard' do
-      let(:guard) { double :guard }
-      let(:another_guard) { double :another_guard }
-
-      it 'adds a guard' do
-        expect { transition.guard guard }.to change(transition.guards, :count).by(1)
-      end
-
-      it 'adds multiple guards' do
-        expect { transition.guard guard, another_guard }.to change(transition.guards, :count).by(2)
-      end
-    end
+    subject(:transition) { Transition.new(object, previous_state, state, configuration, mode) }
+    let(:object) { double :object, failure_messages: [] }
+    let(:previous_state) { :a }
+    let(:state) { :b }
+    let(:configuration) { OpenStruct.new(action: action, concluders: [], guards: [], required_params: []) }
+    let(:action) { double :action, new: action_instance }
+    let(:action_instance) { double :action_instance, call: action_return_value, rollback: nil }
+    let(:action_return_value) { true }
+    let(:mode) { :soft }
 
     describe '#allowed?' do
       let(:guard) { double :guard, new: guard_instance }
       let(:guard_instance) { double :guard_instance, allowed?: nil }
-      let(:object) { double :object }
-      before { transition.guards << guard }
+      before { configuration.guards << guard }
 
       context 'when all guards pass' do
         before { allow(guard_instance).to receive(:allowed?).and_return(true) }
 
-        specify { expect(transition.allowed? object).to be true }
+        specify { expect(transition.allowed?).to be true }
 
         context 'when params are provided' do
           it 'creates the guard with the params' do
-            transition.allowed? object, { foo: 'bar' }
+            transition.allowed?({ foo: 'bar' })
             expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
           end
 
           context 'and some params are required' do
-            before { transition.require_params :foo, :bar }
+            before { configuration.required_params = [:foo, :bar] }
 
             context 'and not all required are provided' do
               it 'throws an exception' do
-                expect { transition.allowed? object, foo: 'something' }.to raise_error('Missing params: bar')
+                expect { transition.allowed? foo: 'something' }.to raise_error('Missing params: bar')
               end
             end
 
             context 'and all required are provided' do
-              specify { expect(transition.allowed? object, foo: 1, bar: 2).to be true }
+              specify { expect(transition.allowed? foo: 1, bar: 2).to be true }
             end
           end
         end
@@ -71,36 +48,35 @@ module EndState
       context 'when not all guards pass' do
         before { allow(guard_instance).to receive(:allowed?).and_return(false) }
 
-        specify { expect(transition.allowed? object).to be false }
+        specify { expect(transition.allowed?).to be false }
       end
     end
 
     describe '#will_allow?' do
       let(:guard) { double :guard, new: guard_instance }
       let(:guard_instance) { double :guard_instance, will_allow?: nil }
-      let(:object) { double :object }
-      before { transition.guards << guard }
+      before { configuration.guards << guard }
 
       context 'when all guards pass' do
         before { allow(guard_instance).to receive(:will_allow?).and_return(true) }
 
-        specify { expect(transition.will_allow? object).to be true }
+        specify { expect(transition.will_allow?).to be true }
 
         context 'when params are provided' do
           it 'creates the guard with the params' do
-            transition.will_allow? object, { foo: 'bar' }
+            transition.will_allow?({ foo: 'bar' })
             expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
           end
 
           context 'and some params are required' do
-            before { transition.require_params :foo, :bar }
+            before { configuration.required_params = [:foo, :bar] }
 
             context 'and not all required are provided' do
-              specify { expect(transition.will_allow? object).to be false }
+              specify { expect(transition.will_allow?).to be false }
             end
 
             context 'and all required are provided' do
-              specify { expect(transition.will_allow? object, foo: 1, bar: 2).to be true }
+              specify { expect(transition.will_allow? foo: 1, bar: 2).to be true }
             end
           end
         end
@@ -109,82 +85,93 @@ module EndState
       context 'when not all guards pass' do
         before { allow(guard_instance).to receive(:will_allow?).and_return(false) }
 
-        specify { expect(transition.will_allow? object).to be false }
+        specify { expect(transition.will_allow?).to be false }
       end
 
       context 'when params are provided' do
         it 'creates the guard with the params' do
-          transition.will_allow? object, { foo: 'bar' }
+          transition.will_allow?({ foo: 'bar' })
           expect(guard).to have_received(:new).with(object, state, { foo: 'bar' })
         end
       end
     end
 
-    describe '#concluder' do
-      let(:concluder) { double :concluder }
-      let(:another_concluder) { double :another_concluder }
+    describe '#call' do
+      context 'when a guard returns false' do
+        let(:guard) { double :guard, new: guard_instance }
+        let(:guard_instance) { double :guard_instance, allowed?: false }
+        before do
+          configuration.guards << guard
+          object.failure_messages << 'not ready'
+        end
 
-      it 'adds a concluder' do
-        expect { transition.concluder concluder }.to change(transition.concluders, :count).by(1)
-      end
+        context 'soft mode' do
+          let(:mode) { :soft }
 
-      it 'adds multiple concluders' do
-        expect { transition.concluder concluder, another_concluder }.to change(transition.concluders, :count).by(2)
-      end
-    end
+          it 'returns false' do
+            expect(transition.call).to be false
+          end
+        end
 
-    describe '#persistence_on' do
-      it 'adds a Persistence concluder' do
-        expect { transition.persistence_on }.to change(transition.concluders, :count).by(1)
-      end
-    end
+        context 'hard mode' do
+          let(:mode) { :hard }
 
-    describe '#allow_params' do
-      it 'adds supplied keys to the allowed_params array' do
-        expect { transition.allow_params :foo, :bar }.to change(transition.allowed_params, :count).by(2)
-      end
-    end
-
-    describe '#require_params' do
-      it 'adds supplied keys to the required_params array' do
-        expect { transition.require_params :foo, :bar }.to change(transition.required_params, :count).by(2)
-      end
-
-      it 'adds supplied keys to the allowed_params array' do
-        expect { transition.allow_params :foo, :bar }.to change(transition.allowed_params, :count).by(2)
-      end
-    end
-
-    describe '#conclude' do
-      let(:concluder) { double :concluder, new: concluder_instance }
-      let(:concluder_instance) { double :concluder_instance, call: nil, rollback: nil }
-      let(:object) { OpenStruct.new(state: :b) }
-      before do
-        allow(object).to receive_message_chain(:class, store_states_as_strings: false)
-        transition.concluders << concluder
-      end
-
-      context 'when all concluders succeed' do
-        before { allow(concluder_instance).to receive(:call).and_return(true) }
-
-        specify { expect(transition.conclude object, :a).to be true }
-      end
-
-      context 'when not all concluders succeed' do
-        before { allow(concluder_instance).to receive(:call).and_return(false) }
-
-        specify { expect(transition.conclude object, :a).to be false }
-
-        it 'rolls them back' do
-          transition.conclude object, :a
-          expect(concluder_instance).to have_received(:rollback)
+          it 'raises GuardFailed' do
+            expect{transition.call}.to raise_error(GuardFailed, 'The transition to b was blocked: not ready')
+          end
         end
       end
 
-      context 'when params are provided' do
-        it 'creates a concluder with the params' do
-          transition.conclude object, :b, { foo: 'bar' }
-          expect(concluder).to have_received(:new).twice.with(object, :a, { foo: 'bar'} )
+      context 'when action returns false' do
+        let(:action_return_value) { false }
+
+        it 'returns false' do
+          expect(transition.call).to be false
+        end
+      end
+
+      context 'when a concluder returns false' do
+        let(:concluder1) { double :concluder, new: concluder1_instance }
+        let(:concluder1_instance) { double :concluder_instance, call: true, rollback: nil }
+        let(:concluder2) { double :concluder, new: concluder2_instance }
+        let(:concluder2_instance) { double :concluder_instance, call: false, rollback: nil }
+        let(:concluder3) { double :concluder, new: concluder3_instance }
+        let(:concluder3_instance) { double :concluder_instance, call: true, rollback: nil }
+        before do
+          configuration.concluders = [concluder1, concluder2, concluder3]
+          object.failure_messages << 'service failure'
+        end
+
+        context 'soft mode' do
+          let(:mode) { :soft }
+
+          it 'returns false and rolls back the completed concluders and the action' do
+            expect(concluder3_instance).to_not receive(:rollback)
+            expect(concluder2_instance).to receive(:rollback).ordered
+            expect(concluder1_instance).to receive(:rollback).ordered
+            expect(action_instance).to receive(:rollback).ordered
+
+            expect(transition.call).to be false
+          end
+        end
+
+        context 'hard mode' do
+          let(:mode) { :hard }
+
+          it 'raises ConcluderFailed and rolls back the completed concluders and the action' do
+            expect(concluder3_instance).to_not receive(:rollback)
+            expect(concluder2_instance).to receive(:rollback).ordered
+            expect(concluder1_instance).to receive(:rollback).ordered
+            expect(action_instance).to receive(:rollback).ordered
+
+            expect{transition.call}.to raise_error(ConcluderFailed, 'The transition to b was rolled back: service failure')
+          end
+        end
+      end
+
+      context 'when guards, action, and concluders return true' do
+        it 'returns true' do
+          expect(transition.call).to be true
         end
       end
     end
