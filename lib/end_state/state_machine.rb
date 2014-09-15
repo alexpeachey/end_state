@@ -85,7 +85,7 @@ module EndState
     end
 
     def transition(state, params = {}, mode = self.class.mode)
-      @failure_messages = @success_messages = []
+      __sm_reset_messages
       return __sm_block_transistion(state, mode) unless __sm_transition_configuration_for(self.state, state)
       __sm_transition_for(state, mode).call(params)
     end
@@ -168,6 +168,11 @@ module EndState
         return false
       end
       fail UnknownState, "The state: #{state} is unknown."
+    end
+
+    def __sm_reset_messages
+      @failure_messages = []
+      @success_messages = []
     end
 
     def self.__sm_add_event(event, state_mapping)
