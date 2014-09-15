@@ -20,8 +20,14 @@ module EndState
 
     describe '#add_success' do
       it 'adds an success' do
-        concluder.add_error('success')
-        expect(object.failure_messages).to eq ['success']
+        concluder.add_success('success')
+        expect(object.success_messages).to eq ['success']
+      end
+    end
+
+    describe 'call' do
+      it 'returns false' do
+        expect(concluder.call).to be false
       end
     end
   end

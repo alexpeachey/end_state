@@ -20,8 +20,34 @@ module EndState
 
     describe '#add_success' do
       it 'adds an success' do
-        guard.add_error('success')
-        expect(object.failure_messages).to eq ['success']
+        guard.add_success('success')
+        expect(object.success_messages).to eq ['success']
+      end
+    end
+
+    describe 'will_allow?' do
+      it 'returns false' do
+        expect(guard.will_allow?).to be false
+      end
+    end
+
+    describe 'allowed?' do
+      context 'will_allow? returns true' do
+        before { allow(guard).to receive(:will_allow?).and_return(true) }
+
+        it 'calls passed and returns true' do
+          expect(guard).to receive(:passed)
+          expect(guard.allowed?).to be true
+        end
+      end
+
+      context 'will_allow? returns false' do
+        before { allow(guard).to receive(:will_allow?).and_return(false) }
+
+        it 'calls failed and returns false' do
+          expect(guard).to receive(:failed)
+          expect(guard.allowed?).to be false
+        end
       end
     end
   end

@@ -14,7 +14,6 @@ module EndState
     end
 
     def rollback
-      true
     end
   end
 end
