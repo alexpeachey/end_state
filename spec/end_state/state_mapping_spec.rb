@@ -18,6 +18,10 @@ module EndState
         end
       end
 
+      context '#to_s' do
+        specify { expect(subject.to_s).to eql 'a => b' }
+      end
+
       context '#any_start_state?' do
         context 'start_state is :any_state' do
           let(:subject) { StateMapping[any_state: :b] }

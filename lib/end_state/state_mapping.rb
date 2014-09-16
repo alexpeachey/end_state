@@ -21,5 +21,9 @@ module EndState
       any_start_state? ||
       state_mapping.any_start_state?
     end
+
+    def to_s
+      "#{start_state} => #{end_state}"
+    end
   end
 end
