@@ -29,14 +29,17 @@ module EndState
 
     private
 
-    def guard_failed
+    def failed(error, message)
       return false unless mode == :hard
-      fail GuardFailed, "The transition to #{state} was blocked: #{object.failure_messages.join(', ')}"
+      fail error, "The transition to #{state} was #{message}: #{object.failure_messages.join(', ')}"
+    end
+
+    def guard_failed
+      failed GuardFailed, 'blocked'
     end
 
     def conclude_failed
-      return false unless mode == :hard
-      fail ConcluderFailed, "The transition to #{state} was rolled back: #{object.failure_messages.join(', ')}"
+      failed ConcluderFailed, 'rolled back'
     end
 
     def conclude(params={})
