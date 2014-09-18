@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'ostruct'
 
 module EndState
-  describe Transition do
+  describe TransitionConfiguration do
     subject(:config) { TransitionConfiguration.new }
 
     describe '#custom_action' do
