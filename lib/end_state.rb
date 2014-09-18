@@ -9,6 +9,7 @@ require 'end_state/transition'
 require 'end_state/transition_configuration'
 require 'end_state/state_mapping'
 require 'end_state/action'
+require 'end_state/state_machine_configuration'
 require 'end_state/state_machine'
 
 begin
