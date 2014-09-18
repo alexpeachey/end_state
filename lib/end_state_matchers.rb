@@ -1,3 +1,5 @@
+require 'end_state/state_mapping'
+
 module EndStateMatchers
   def have_transition(transition)
     TransitionMatcher.new(transition)
@@ -7,7 +9,7 @@ module EndStateMatchers
     attr_reader :transition, :machine, :failure_messages, :guards, :concluders, :required_params
 
     def initialize(transition)
-      @transition = transition
+      @transition = EndState::StateMapping[transition]
       @failure_messages = []
       @guards = []
       @concluders = []
@@ -24,21 +26,11 @@ module EndStateMatchers
     end
 
     def description
-      "have transition :#{transition.keys.first} => :#{transition.values.first}"
-    end
-
-    def with_guard(guard)
-      @guards << guard
-      self
+      "have transition #{transition}"
     end
 
     def with_guards(*guards)
       @guards += Array(guards).flatten
-      self
-    end
-
-    def with_concluder(concluder)
-      @concluders << concluder
       self
     end
 
@@ -52,6 +44,10 @@ module EndStateMatchers
       self
     end
 
+    alias_method :with_guard, :with_guards
+    alias_method :with_concluder, :with_concluders
+    alias_method :with_required_param, :with_required_params
+
     # Backward compatibility
     # Finalizer is deprecated
     alias_method :with_finalizer, :with_concluder
@@ -60,50 +56,54 @@ module EndStateMatchers
 
     private
 
+    def transition_configuration
+      @tc = machine.transition_configurations[transition]
+    end
+
+    def has_guard?(guard)
+      transition_configuration.guards.include?(guard)
+    end
+
+    def has_concluder?(concluder)
+      transition_configuration.concluders.include?(concluder)
+    end
+
+    def has_required_param?(param)
+      transition_configuration.required_params.include?(param)
+    end
+
+    def add_failure(suffix)
+      failure_messages << "expected transition #{transition} #{suffix}"
+    end
+
     def verify
-      result = true
-      if machine.transitions.keys.include? transition
-        result = (result && verify_guards) if guards.any?
-        result = (result && verify_concluders) if concluders.any?
-        result = (result && verify_required_params) if required_params.any?
-        result
+      if transition_configuration.nil?
+        add_failure('to be defined')
       else
-        failure_messages << "expected that #{machine.name} would have transition :#{transition.keys.first} => :#{transition.values.first}"
-        false
+        verify_guards
+        verify_concluders
+        verify_required_params
       end
+
+      failure_messages.empty?
     end
 
     def verify_guards
-      result = true
-      guards.each do |guard|
-        unless machine.transitions[transition].guards.any? { |g| g == guard }
-          failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have guard #{guard.name}"
-          result = false
-        end
+      guards.map do |guard|
+        add_failure("to have guard #{guard.name}") unless has_guard?(guard)
       end
-      result
     end
 
     def verify_concluders
-      result = true
-      concluders.each do |concluder|
-        unless machine.transitions[transition].concluders.any? { |f| f == concluder }
-          failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have concluder #{concluder.name}"
-          result = false
-        end
+      concluders.map do |concluder|
+        add_failure("to have concluder #{concluder.name}") unless has_concluder?(concluder)
       end
-      result
     end
 
     def verify_required_params
-      result = true
       required_params.each do |param|
-        unless machine.transitions[transition].required_params.any? { |p| p == param }
-          failure_messages << "expected that transition :#{transition.keys.first} => :#{transition.values.first} would have required param #{param}"
-          result = false
-        end
+        add_failure("to have required param #{param}") unless has_required_param?(param)
       end
-      result
     end
   end
 end

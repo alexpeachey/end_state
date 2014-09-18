@@ -1,82 +1,68 @@
 module EndState
   class Transition
-    attr_reader :state, :blocked_event_message
-    attr_accessor :action, :guards, :concluders, :allowed_params, :required_params
+    attr_reader :configuration, :mode, :object, :previous_state, :state
 
-    def initialize(state)
+    def initialize(object, previous_state, state, configuration, mode)
+      @object = object
+      @previous_state = previous_state
       @state = state
-      @action = Action
-      @guards = []
-      @concluders = []
-      @allowed_params = []
-      @required_params = []
+      @configuration = configuration
+      @mode = mode
     end
 
-    def allowed?(object, params={})
+    def call(params={})
+      return guard_failed unless allowed?(params)
+      return false unless action.new(object, state).call
+      return conclude_failed unless conclude(params)
+      true
+    end
+
+    def allowed?(params={})
       raise "Missing params: #{missing_params(params).join(',')}" unless missing_params(params).empty?
       guards.all? { |guard| guard.new(object, state, params).allowed? }
     end
 
-    def will_allow?(object, params={})
+    def will_allow?(params={})
       return false unless missing_params(params).empty?
       guards.all? { |guard| guard.new(object, state, params).will_allow? }
     end
 
-    def conclude(object, previous_state, params={})
+    private
+
+    def failed(error, message)
+      return false unless mode == :hard
+      fail error, "The transition to #{state} was #{message}: #{object.failure_messages.join(', ')}"
+    end
+
+    def guard_failed
+      failed GuardFailed, 'blocked'
+    end
+
+    def conclude_failed
+      failed ConcluderFailed, 'rolled back'
+    end
+
+    def conclude(params={})
       concluders.each_with_object([]) do |concluder, concluded|
         concluded << concluder
-        return rollback(concluded, object, previous_state, params) unless run_concluder(concluder, object, state, params)
+        return rollback(concluded, params) unless concluder.new(object, state, params).call
       end
       true
     end
 
-    def custom_action(action)
-      @action = action
-    end
-
-    def guard(*guards)
-      Array(guards).flatten.each { |guard| self.guards << guard }
-    end
-
-    def concluder(*concluders)
-      Array(concluders).flatten.each { |concluder| self.concluders << concluder }
-    end
-
-    def persistence_on
-      concluder Concluders::Persistence
-    end
-
-    def allow_params(*params)
-      Array(params).flatten.each do |param|
-        self.allowed_params << param unless self.allowed_params.include? param
-      end
-    end
-
-    def require_params(*params)
-      Array(params).flatten.each do |param|
-        self.allowed_params << param unless self.allowed_params.include? param
-        self.required_params << param unless self.required_params.include? param
-      end
-    end
-
-    def blocked(message)
-      @blocked_event_message = message
-    end
-
-    private
-
-    def rollback(concluded, object, previous_state, params)
-      action.new(object, previous_state).rollback
+    def rollback(concluded, params)
       concluded.reverse.each { |concluder| concluder.new(object, state, params).rollback }
+      action.new(object, previous_state).rollback
       false
-    end
-
-    def run_concluder(concluder, object, state, params)
-      concluder.new(object, state, params).call
     end
 
     def missing_params(params)
       required_params.select { |key| params[key].nil? }
+    end
+
+    [:action, :concluders, :guards, :required_params].each do |method|
+      define_method(method) { configuration.public_send(method) }
+      private method
     end
   end
 end
