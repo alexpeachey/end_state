@@ -1,78 +1,12 @@
 module EndState
   class StateMachine < SimpleDelegator
+    extend StateMachineConfiguration
+
     attr_accessor :failure_messages, :success_messages
 
     def initialize(object)
       super
       Action.new(self, self.class.initial_state).call if self.state.nil?
-    end
-
-    @initial_state = :__nil__
-    @mode = :soft
-
-    def self.initial_state
-      @initial_state
-    end
-
-    def self.set_initial_state(state)
-      @initial_state = state.to_sym
-    end
-
-    def self.treat_all_transitions_as_hard!
-      @mode = :hard
-    end
-
-    def self.mode
-      @mode
-    end
-
-    def self.store_states_as_strings!
-      @store_states_as_strings = true
-    end
-
-    def self.store_states_as_strings
-      !!@store_states_as_strings
-    end
-
-    def self.transition(state_map)
-      transition_alias = state_map.delete(:as)
-      transition_alias = transition_alias.to_sym unless transition_alias.nil?
-
-      configuration = TransitionConfiguration.new
-      yield configuration if block_given?
-
-      state_map.each do |start_states, end_state|
-        Array(start_states).each do |start_state|
-          state_mapping = StateMapping[start_state.to_sym => end_state.to_sym]
-          transition_configurations[state_mapping] = configuration
-          __sm_add_event(transition_alias, state_mapping) unless transition_alias.nil?
-        end
-      end
-    end
-
-    def self.transition_configurations
-      @transition_configurations ||= {}
-    end
-
-    def self.events
-      @events ||= {}
-    end
-
-    def self.state_attribute(attribute)
-      define_method(:state) { send(attribute.to_sym) }
-      define_method(:state=) { |val| send("#{attribute}=".to_sym, val) }
-    end
-
-    def self.states
-      (start_states + end_states).uniq
-    end
-
-    def self.start_states
-      transition_configurations.keys.map(&:start_state).uniq
-    end
-
-    def self.end_states
-      transition_configurations.keys.map(&:end_state).uniq
     end
 
     def object
@@ -173,21 +107,6 @@ module EndState
     def __sm_reset_messages
       @failure_messages = []
       @success_messages = []
-    end
-
-    def self.__sm_add_event(event, state_mapping)
-      events[event] ||= []
-      conflicting_mapping = events[event].find{ |sm| sm.conflicts?(state_mapping) }
-      if conflicting_mapping
-        message =
-          "Attempting to define :#{event} as transitioning from " \
-          ":#{state_mapping.start_state} => :#{state_mapping.end_state} when " \
-          ":#{conflicting_mapping.start_state} => :#{conflicting_mapping.end_state} already exists. " \
-          "You cannot define multiple transitions from a single state with the same event name."
-
-        fail EventConflict, message
-      end
-      events[event] << state_mapping
     end
   end
 end
