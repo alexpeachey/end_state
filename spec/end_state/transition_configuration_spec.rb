@@ -14,13 +14,6 @@ module EndState
       end
     end
 
-    describe '#blocked' do
-      it 'sets the blocked event message' do
-        config.blocked 'This is blocked.'
-        expect(config.blocked_event_message).to eq 'This is blocked.'
-      end
-    end
-
     describe '#guard' do
       let(:guard) { double :guard }
       let(:another_guard) { double :another_guard }

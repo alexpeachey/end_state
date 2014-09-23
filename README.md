@@ -243,17 +243,12 @@ end
 ## Events
 
 By using the `as` option in a transition definition you are creating an event representing that transition.
-This can allow you to exercise the machine in a more natural "verb" style interaction. When using `as` event
-definitions you can optionally set a `blocked` message on the transition. When the event is executed, if the
-machine is not in the initial state of the event, the message is added to the `failure_messages`
-array on the machine. Events, like `transition` have both a standard and a bang (`!`) style. The bang style
-will raise an exception if there is a problem.
+This can allow you to exercise the machine in a more natural "verb" style interaction. Events, like `transition`
+have both a standard and a bang (`!`) style. The bang style will raise an exception if there is a problem.
 
 ```ruby
 class Machine < EndState::StateMachine
-  transition a: :b, as: :go do |t|
-    t.blocked 'Cannot go!'
-  end
+  transition a: :b, as: :go
 end
 
 machine = Machine.new(StatefulObject.new(:a))
@@ -261,7 +256,6 @@ machine = Machine.new(StatefulObject.new(:a))
 machine.go                  # => true
 machine.state               # => :b
 machine.go                  # => false
-machine.failure_messages    # => ['Cannot go!']
 machine.go!                 # => raises InvalidTransition
 ```
 

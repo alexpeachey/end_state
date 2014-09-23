@@ -78,8 +78,6 @@ module EndState
 
     def __sm_invalid_event(event, mode)
       fail InvalidTransition, "Transition by event: #{event} is invalid." if mode == :hard
-      message = self.class.transition_configurations[self.class.events[event].first].blocked_event_message
-      @failure_messages = [message] if message
       :__invalid_event__
     end
 

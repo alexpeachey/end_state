@@ -79,9 +79,7 @@ module EndState
 
       context 'single transition' do
         before do
-          StateMachine.transition a: :b, as: :go do |t|
-            t.blocked 'Invalid event!'
-          end
+          StateMachine.transition a: :b, as: :go
         end
 
         it 'transitions the state' do
@@ -109,11 +107,6 @@ module EndState
             expect(machine.state).to eq :c
           end
 
-          it 'adds a failure message specified by blocked' do
-            machine.go
-            expect(machine.failure_messages).to eq ['Invalid event!']
-          end
-
           context 'and all transitions are forced to run in :hard mode' do
             before { machine.class.treat_all_transitions_as_hard! }
 
@@ -137,9 +130,7 @@ module EndState
 
       context 'multiple start states' do
         before do
-          StateMachine.transition [:a, :b] => :c, as: :go do |t|
-            t.blocked 'Invalid event!'
-          end
+          StateMachine.transition [:a, :b] => :c, as: :go
         end
 
         context 'initial state is :a' do
@@ -172,9 +163,7 @@ module EndState
 
       context 'multiple transitions' do
         before do
-          StateMachine.transition a: :b, c: :d, as: :go do |t|
-            t.blocked 'Invalid event!'
-          end
+          StateMachine.transition a: :b, c: :d, as: :go
         end
 
         context 'initial state is :a' do
@@ -200,9 +189,7 @@ module EndState
     describe '#{event}!' do
       let(:object) { OpenStruct.new(state: :a) }
       before do
-        StateMachine.transition a: :b, as: :go do |t|
-          t.blocked 'Invalid event!'
-        end
+        StateMachine.transition a: :b, as: :go
       end
 
       it 'transitions the state' do
