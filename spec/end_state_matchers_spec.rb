@@ -23,6 +23,10 @@ module EndState
         expect(TestMachine).to have_transition(a: :b)
       end
 
+      it 'has a description' do
+        expect(have_transition(a: :b).description).to eq("have transition a => b")
+      end
+
       it 'fails when the guard is not present' do
         expect {
           expect(TestMachine).to have_transition(b: :c)
