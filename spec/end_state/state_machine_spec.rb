@@ -7,7 +7,6 @@ module EndState
     let(:object) { OpenStruct.new(state: nil) }
     before do
       StateMachine.instance_variable_set '@transition_configurations'.to_sym, nil
-      StateMachine.instance_variable_set '@events'.to_sym, nil
       StateMachine.instance_variable_set '@store_states_as_strings'.to_sym, nil
       StateMachine.instance_variable_set '@initial_state'.to_sym, :__nil__
       StateMachine.instance_variable_set '@mode'.to_sym, :soft
@@ -52,7 +51,7 @@ module EndState
       end
 
       context 'when the state shares a name with an event' do
-        before { StateMachine.transition start: :stop, as: :stop }
+        before { StateMachine.transition start: :stop }
 
         context 'and the object, in that state, cannot transition on the event' do
           let(:object) { OpenStruct.new(state: :stop) }
@@ -79,9 +78,7 @@ module EndState
 
       context 'single transition' do
         before do
-          StateMachine.transition a: :b, as: :go do |t|
-            t.blocked 'Invalid event!'
-          end
+          StateMachine.transition a: :b, as: :go
         end
 
         it 'transitions the state' do
@@ -109,11 +106,6 @@ module EndState
             expect(machine.state).to eq :c
           end
 
-          it 'adds a failure message specified by blocked' do
-            machine.go
-            expect(machine.failure_messages).to eq ['Invalid event!']
-          end
-
           context 'and all transitions are forced to run in :hard mode' do
             before { machine.class.treat_all_transitions_as_hard! }
 
@@ -137,9 +129,7 @@ module EndState
 
       context 'multiple start states' do
         before do
-          StateMachine.transition [:a, :b] => :c, as: :go do |t|
-            t.blocked 'Invalid event!'
-          end
+          StateMachine.transition [:a, :b] => :c, as: :go
         end
 
         context 'initial state is :a' do
@@ -159,22 +149,11 @@ module EndState
             expect(machine.state).to eq :c
           end
         end
-
-        context 'initial state is :d' do
-          let(:object) { OpenStruct.new(state: :b) }
-
-          it 'transitions the state' do
-            machine.go
-            expect(machine.state).to eq :c
-          end
-        end
       end
 
       context 'multiple transitions' do
         before do
-          StateMachine.transition a: :b, c: :d, as: :go do |t|
-            t.blocked 'Invalid event!'
-          end
+          StateMachine.transition a: :b, c: :d, as: :go
         end
 
         context 'initial state is :a' do
@@ -200,9 +179,7 @@ module EndState
     describe '#{event}!' do
       let(:object) { OpenStruct.new(state: :a) }
       before do
-        StateMachine.transition a: :b, as: :go do |t|
-          t.blocked 'Invalid event!'
-        end
+        StateMachine.transition a: :b, as: :go
       end
 
       it 'transitions the state' do

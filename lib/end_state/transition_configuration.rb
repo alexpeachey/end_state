@@ -1,11 +1,10 @@
 module EndState
   class TransitionConfiguration
-    attr_reader :action, :allowed_params, :blocked_event_message, :concluders, :guards, :required_params
+    attr_reader :action, :allowed_params, :concluders, :guards, :required_params
 
     def initialize
       @action = Action
       @allowed_params = []
-      @blocked_event_message = nil
       @concluders = []
       @guards = []
       @required_params = []
@@ -38,10 +37,6 @@ module EndState
         append_unless_included(:allowed_params, param)
         append_unless_included(:required_params, param)
       end
-    end
-
-    def blocked(message)
-      @blocked_event_message = message
     end
 
     private
