@@ -1,5 +1,3 @@
-require 'end_state/state_mapping'
-
 module EndStateMatchers
   def have_transition(transition)
     TransitionMatcher.new(transition)
