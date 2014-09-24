@@ -36,8 +36,8 @@ Transitions can be named by adding an `:as` option.
 class Machine < EndState::StateMachine
   transition parked: :idling, as: :start
   transition idling: :first_gear, first_gear: :second_gear, second_gear: :third_gear, as: :shift_up
-  transition third_gear: :second_gear, second_gear: :first_gear, as: shift_down
-  transition first_gear: :idling, as: idle
+  transition third_gear: :second_gear, second_gear: :first_gear, as: :shift_down
+  transition first_gear: :idling, as: :idle
   transition [:idling, :first_gear] => :parked, as: :park
 end
 ```
