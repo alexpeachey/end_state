@@ -34,30 +34,31 @@ module EndState
           let(:options) { { a: :b, as: :go } }
 
           it 'creates an alias' do
-            expect(StateMachine.events[:go]).to eq [{ a: :b }]
+            expect(StateMachine).to have_transition(a: :b).with_event(:go)
           end
 
           context 'another single transition with as' do
             before { StateMachine.transition({c: :d, as: :go}) }
 
             it 'appends to the event' do
-              expect(StateMachine.events[:go]).to eq [{ a: :b }, { c: :d }]
+              expect(StateMachine).to have_transition(a: :b).with_event(:go)
+              expect(StateMachine).to have_transition(c: :d).with_event(:go)
             end
           end
 
           context 'another single transition with as that conflicts' do
             it 'raises an error' do
               expect{ StateMachine.transition({a: :c, as: :go}) }.to raise_error EventConflict,
-                'Attempting to define :go as transitioning from :a => :c when :a => :b already exists. ' \
-                'You cannot define multiple transitions from a single state with the same event name.'
+                "Attempting to define event 'go' on state 'a', but it is already defined. " \
+                "(Check duplicates and use of 'any_state')"
             end
           end
 
           context 'another single transition with as that conflicts' do
             it 'raises an error' do
               expect{ StateMachine.transition({any_state: :c, as: :go}) }.to raise_error EventConflict,
-                'Attempting to define :go as transitioning from :any_state => :c when :a => :b already exists. ' \
-                'You cannot define multiple transitions from a single state with the same event name.'
+                "Attempting to define event 'go' on state 'any_state', but it is already defined. " \
+                "(Check duplicates and use of 'any_state')"
             end
           end
         end
@@ -70,11 +71,17 @@ module EndState
           expect(@transition_configuration).to be_a TransitionConfiguration
         end
 
+        it 'has both transitions' do
+          expect(StateMachine).to have_transition(a: :c)
+          expect(StateMachine).to have_transition(b: :c)
+        end
+
         context 'with as' do
           let(:options) { { [:a, :b] => :c, as: :go } }
 
           it 'creates an alias' do
-            expect(StateMachine.events[:go]).to eq [{ a: :c }, { b: :c }]
+            expect(StateMachine).to have_transition(a: :c).with_event(:go)
+            expect(StateMachine).to have_transition(b: :c).with_event(:go)
           end
         end
       end
@@ -86,11 +93,17 @@ module EndState
           expect(@transition_configuration).to be_a TransitionConfiguration
         end
 
+        it 'has both transitions' do
+          expect(StateMachine).to have_transition(a: :b)
+          expect(StateMachine).to have_transition(c: :d)
+        end
+
         context 'with as' do
           let(:options) { { a: :b, c: :d, as: :go } }
 
           it 'creates an alias' do
-            expect(StateMachine.events[:go]).to eq [{ a: :b }, { c: :d }]
+            expect(StateMachine).to have_transition(a: :b).with_event(:go)
+            expect(StateMachine).to have_transition(c: :d).with_event(:go)
           end
         end
       end

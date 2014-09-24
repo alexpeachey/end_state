@@ -1,19 +1,18 @@
-require 'end_state/state_mapping'
-
 module EndStateMatchers
   def have_transition(transition)
     TransitionMatcher.new(transition)
   end
 
   class TransitionMatcher
-    attr_reader :transition, :machine, :failure_messages, :guards, :concluders, :required_params
+    attr_reader :start_state, :end_state, :event, :machine, :failure_messages, :guards, :concluders, :required_params
 
     def initialize(transition)
-      @transition = EndState::StateMapping[transition]
-      @failure_messages = []
+      @start_state, @end_state = transition.first
+      @event = nil
       @guards = []
       @concluders = []
       @required_params = []
+      @failure_messages = []
     end
 
     def matches?(actual)
@@ -26,7 +25,12 @@ module EndStateMatchers
     end
 
     def description
-      "have transition #{transition}"
+      "have transition #{start_state} => #{end_state}"
+    end
+
+    def with_event(event)
+      @event = event
+      self
     end
 
     def with_guards(*guards)
@@ -57,7 +61,11 @@ module EndStateMatchers
     private
 
     def transition_configuration
-      @tc = machine.transition_configurations[transition]
+      @tc = machine.transition_configurations.get_by_end_state(start_state, end_state)
+    end
+
+    def has_event?(event)
+      machine.transition_configurations.get_by_event(start_state, event) == end_state
     end
 
     def has_guard?(guard)
@@ -73,19 +81,24 @@ module EndStateMatchers
     end
 
     def add_failure(suffix)
-      failure_messages << "expected transition #{transition} #{suffix}"
+      failure_messages << "expected transition #{start_state} => #{end_state} #{suffix}"
     end
 
     def verify
       if transition_configuration.nil?
         add_failure('to be defined')
       else
+        verify_event if event
         verify_guards
         verify_concluders
         verify_required_params
       end
 
       failure_messages.empty?
+    end
+
+    def verify_event
+      add_failure("to have event name: #{event}") unless has_event?(event)
     end
 
     def verify_guards

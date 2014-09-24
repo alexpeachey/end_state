@@ -10,7 +10,7 @@ module EndState
   class TestConcluder3 < EndState::Concluder; end
 
   class TestMachine < EndState::StateMachine
-    transition a: :b do |t|
+    transition a: :b, as: :go do |t|
       t.guard TestGuard1, TestGuard2
       t.concluder TestConcluder1, TestConcluder2
       t.require_params :a, :b
@@ -23,10 +23,26 @@ module EndState
         expect(TestMachine).to have_transition(a: :b)
       end
 
+      it 'has a description' do
+        expect(have_transition(a: :b).description).to eq("have transition a => b")
+      end
+
       it 'fails when the guard is not present' do
         expect {
           expect(TestMachine).to have_transition(b: :c)
         }.to fail_with('expected transition b => c to be defined')
+      end
+
+      describe 'with_event' do
+        it 'passes when the guard is present' do
+          expect(TestMachine).to have_transition(a: :b).with_event(:go)
+        end
+
+        it 'fails when the guard is not present' do
+          expect {
+            expect(TestMachine).to have_transition(a: :b).with_event(:reset)
+          }.to fail_with('expected transition a => b to have event name: reset')
+        end
       end
 
       describe 'with_guard' do

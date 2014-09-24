@@ -28,27 +28,22 @@ module EndState
     end
 
     def transition(state_map)
-      transition_alias = state_map.delete(:as)
-      transition_alias = transition_alias.to_sym unless transition_alias.nil?
+      event = state_map.delete(:as)
+      event = event.to_sym unless event.nil?
 
       configuration = TransitionConfiguration.new
       yield configuration if block_given?
 
       state_map.each do |start_states, end_state|
         Array(start_states).each do |start_state|
-          state_mapping = StateMapping[start_state.to_sym => end_state.to_sym]
-          transition_configurations[state_mapping] = configuration
-          add_event(transition_alias, state_mapping) unless transition_alias.nil?
+          prevent_event_conflicts(start_state, event)
+          transition_configurations.add(start_state, end_state, configuration, event)
         end
       end
     end
 
     def transition_configurations
-      @transition_configurations ||= {}
-    end
-
-    def events
-      @events ||= {}
+      @transition_configurations ||= TransitionConfigurationSet.new
     end
 
     def state_attribute(attribute)
@@ -56,33 +51,27 @@ module EndState
       define_method(:state=) { |val| send("#{attribute}=".to_sym, val) }
     end
 
+    def events
+      transition_configurations.events
+    end
+
     def states
       (start_states + end_states).uniq
     end
 
     def start_states
-      transition_configurations.keys.map(&:start_state).uniq
+      transition_configurations.start_states
     end
 
     def end_states
-      transition_configurations.keys.map(&:end_state).uniq
+      transition_configurations.end_states
     end
 
     private
 
-    def add_event(event, state_mapping)
-      events[event] ||= []
-      conflicting_mapping = events[event].find{ |sm| sm.conflicts?(state_mapping) }
-      if conflicting_mapping
-        message =
-          "Attempting to define :#{event} as transitioning from " \
-          ":#{state_mapping.start_state} => :#{state_mapping.end_state} when " \
-          ":#{conflicting_mapping.start_state} => :#{conflicting_mapping.end_state} already exists. " \
-          "You cannot define multiple transitions from a single state with the same event name."
-
-        fail EventConflict, message
-      end
-      events[event] << state_mapping
+    def prevent_event_conflicts(start_state, event)
+      return unless transition_configurations.event_conflicts?(start_state, event)
+      fail EventConflict, "Attempting to define event '#{event}' on state '#{start_state}', but it is already defined. (Check duplicates and use of 'any_state')"
     end
   end
 end

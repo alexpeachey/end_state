@@ -10,19 +10,23 @@ module EndState
     end
 
     def draw
-      machine.transitions.keys.each do |t|
-        left, right = t.to_a.flatten
-        nodes[left] ||= add_nodes(left.to_s)
-        nodes[right] ||= add_nodes(right.to_s)
-        edge = add_edges nodes[left], nodes[right]
-        if event_labels
-          event = machine.events.detect do |event, transition|
-            transition.include? t
-          end
-          edge[:label] = event.first.to_s if event
-        end
-      end
+      add_transitions
       self
+    end
+
+    private
+
+    def add_transitions
+      machine.transition_configurations.each do |start_state, end_state, config, event|
+        add_transition(start_state, end_state, config, event)
+      end
+    end
+
+    def add_transition start_state, end_state, config, event
+      nodes[start_state] ||= add_node(start_state.to_s)
+      nodes[end_state] ||= add_node(end_state.to_s)
+      edge = add_edge nodes[start_state], nodes[end_state]
+      edge[:label] = event.to_s if event && event_labels
     end
   end
 end
