@@ -29,28 +29,32 @@ module EndState
     end
 
     def method_missing(method, *args, &block)
-      if __sm_is_state_predicate?(method)
-        __sm_current_state? __sm_extract_state(method)
-      elsif __sm_is_event?(method)
-        event, mode = __sm_extract_event_and_mode(method)
-        __sm_event_transition event, args[0] || {}, mode
-      else
-        super
-      end
+      return super unless __sm_is_method?(method)
+      return __sm_predicate(method) if __sm_is_state_predicate?(method)
+      __sm_event_transition __sm_event(method), args[0] || {}, __sm_event_mode(method)
     end
 
     private
+
+    def __sm_is_method?(method)
+      __sm_is_state_predicate?(method) || __sm_is_event?(method)
+    end
+
+    def __sm_predicate(method)
+      __sm_current_state? __sm_extract_state(method)
+    end
 
     def __sm_extract_state(method)
       method.to_s[0..-2].to_sym
     end
 
-    def __sm_extract_event_and_mode(method)
-      if method.to_s.end_with?('!')
-        [method.to_s[0..-2].to_sym, :hard]
-      else
-        [method.to_sym, __sm_actual_mode(:soft)]
-      end
+    def __sm_event(method)
+      method.to_s.gsub('!','').to_sym
+    end
+
+    def __sm_event_mode(method)
+      return :hard if method.to_s.end_with?('!')
+      __sm_actual_mode(:soft)
     end
 
     def __sm_is_state_predicate?(method)
@@ -58,8 +62,7 @@ module EndState
     end
 
     def __sm_is_event?(method)
-      event, mode = __sm_extract_event_and_mode(method)
-      self.class.events.include?(event)
+      self.class.events.include? __sm_event(method)
     end
 
     def __sm_current_state?(end_state)
