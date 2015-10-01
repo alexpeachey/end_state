@@ -16,6 +16,7 @@ begin
   require 'graphviz'
   require 'end_state/graph'
 rescue LoadError
+  require 'end_state/no_graph'
 end
 
 module EndState

@@ -34,11 +34,11 @@ module EndState
     end
 
     def end_states
-      configuration_map.map { |k, v| v.keys }.flatten.uniq
+      configuration_map.map { |_, v| v.keys }.flatten.uniq
     end
 
     def events
-      end_state_map.map { |k, v| v.keys }.flatten.uniq
+      end_state_map.map { |_, v| v.keys }.flatten.uniq
     end
 
     def event_conflicts?(start_state, event)
@@ -46,7 +46,7 @@ module EndState
     end
 
     def each &block
-      all_transitions.each &block
+      all_transitions.each(&block)
     end
 
     private

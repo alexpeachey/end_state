@@ -51,7 +51,7 @@ module EndState
     end
 
     def rollback(concluded, params)
-      concluded.reverse.each { |concluder| concluder.new(object, state, params).rollback }
+      concluded.reverse_each { |concluder| concluder.new(object, state, params).rollback }
       action.new(object, previous_state).rollback
       false
     end
