@@ -260,6 +260,29 @@ module EndState
           specify { expect(machine.can_transition? :d).to be true }
         end
       end
+
+      context 'when a guard fails' do
+        let(:object) { OpenStruct.new(state: :c) }
+        let(:guard_with_messages) {
+          Class.new(EndState::Guard) do
+            define_method(:will_allow?) do |params={}|
+              false
+            end
+
+            define_method(:failed) do
+              add_error "An error occurred."
+            end
+          end
+        }
+        before :each do
+          StateMachine.transition(c: :d) {|t| t.guard guard_with_messages }
+        end
+
+        it 'executes the failure callback' do
+          machine.can_transition? :d
+          expect(machine.failure_messages).to include("An error occurred.")
+        end
+      end
     end
 
     describe '#transition' do

@@ -14,8 +14,9 @@ module EndState
     end
 
     def can_transition?(end_state, params = {})
+      __sm_reset_messages
       return false unless __sm_transition_configuration_for(state.to_sym, end_state.to_sym)
-      __sm_transition_for(end_state.to_sym).will_allow?(params)
+      __sm_transition_for(end_state.to_sym).allowed?(params)
     end
 
     def transition(end_state, params = {}, mode = self.class.mode)
