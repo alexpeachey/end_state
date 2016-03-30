@@ -289,7 +289,10 @@ module EndState
           end
 
           context 'and the machine is set to store_states_as_strings' do
-            before { StateMachine.store_states_as_strings! }
+            before do
+              object.state = 'a'
+              StateMachine.store_states_as_strings!
+            end
 
             it 'transitions the state stored as a string' do
               machine.transition :b

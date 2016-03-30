@@ -14,18 +14,18 @@ module EndState
     end
 
     def can_transition?(end_state, params = {})
-      return false unless __sm_transition_configuration_for(state, end_state)
-      __sm_transition_for(end_state).will_allow?(params)
+      return false unless __sm_transition_configuration_for(state.to_sym, end_state.to_sym)
+      __sm_transition_for(end_state.to_sym).will_allow?(params)
     end
 
     def transition(end_state, params = {}, mode = self.class.mode)
       __sm_reset_messages
-      return __sm_block_transistion(end_state, mode) unless __sm_transition_configuration_for(state, end_state)
-      __sm_transition_for(end_state, mode).call(params)
+      return __sm_block_transistion(end_state.to_sym, mode) unless __sm_transition_configuration_for(state.to_sym, end_state.to_sym)
+      __sm_transition_for(end_state.to_sym, mode).call(params)
     end
 
     def transition!(end_state, params = {})
-      transition end_state, params, :hard
+      transition end_state.to_sym, params, :hard
     end
 
     def method_missing(method, *args, &block)
