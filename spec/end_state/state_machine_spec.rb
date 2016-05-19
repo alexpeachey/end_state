@@ -213,7 +213,7 @@ module EndState
         let(:object) { OpenStruct.new(state: :c) }
 
         it 'blocks invalid events' do
-          expect { machine.go! }.to raise_error
+          expect { machine.go! }.to raise_error(InvalidTransition)
           expect(machine.state).to eq :c
         end
       end
