@@ -18,7 +18,7 @@ module EndState
     end
 
     def allowed?(params={})
-      raise "Missing params: #{missing_params(params).join(',')}" unless missing_params(params).empty?
+      return params_not_provided(missing_params(params)) unless missing_params(params).empty?
       guards.all? { |guard| guard.new(object, state, params).allowed? }
     end
 
@@ -40,6 +40,10 @@ module EndState
 
     def conclude_failed
       failed ConcluderFailed, 'rolled back'
+    end
+
+    def params_not_provided(params_list)
+      fail MissingParams, "Missing params: #{params_list.join(',')}"
     end
 
     def conclude(params={})
