@@ -1,8 +1,9 @@
 module EndState
-  class Error < StandardError; end
-  class UnknownState < Error; end
-  class InvalidTransition < Error; end
-  class GuardFailed < Error; end
-  class ConcluderFailed < Error; end
-  class EventConflict < Error; end
+  Error = Class.new(StandardError)
+  UnknownState = Class.new(Error)
+  InvalidTransition = Class.new(Error)
+  GuardFailed = Class.new(Error)
+  ConcluderFailed = Class.new(Error)
+  EventConflict = Class.new(Error)
+  MissingParams = Class.new(Error)
 end

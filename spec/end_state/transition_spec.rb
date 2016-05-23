@@ -33,8 +33,8 @@ module EndState
             before { configuration.required_params = [:foo, :bar] }
 
             context 'and not all required are provided' do
-              it 'throws an exception' do
-                expect { transition.allowed? foo: 'something' }.to raise_error('Missing params: bar')
+              it 'raises MissingParams' do
+                expect { transition.allowed? foo: 'something' }.to raise_error(MissingParams, 'Missing params: bar')
               end
             end
 
