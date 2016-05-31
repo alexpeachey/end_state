@@ -71,7 +71,7 @@ module EndState
 
     def prevent_event_conflicts(start_state, event)
       return unless transition_configurations.event_conflicts?(start_state, event)
-      fail EventConflict, "Attempting to define event '#{event}' on state '#{start_state}', but it is already defined. (Check duplicates and use of 'any_state')"
+      Kernel.fail EventConflict, "Attempting to define event '#{event}' on state '#{start_state}', but it is already defined. (Check duplicates and use of 'any_state')"
     end
   end
 end
