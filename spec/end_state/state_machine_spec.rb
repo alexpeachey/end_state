@@ -228,6 +228,27 @@ module EndState
           expect(machine.state).to eq :end
         end
       end
+
+      context 'when a transition is named fail' do
+        let(:object) { OpenStruct.new(state: :a) }
+        before do
+          StateMachine.transition a: :c, as: :fail
+          StateMachine.transition c: :d, as: :other
+        end
+
+        it 'raises the proper error for invalid transitions' do
+          expect { machine.transition! :d }.to raise_error(InvalidTransition)
+        end
+
+        it 'raises the proper error for transitions to unknown states' do
+          expect { machine.transition(:no_state) }.to raise_error(UnknownState)
+        end
+
+        it 'transitions properly when directly calling fail' do
+          machine.fail!
+          expect(machine.state).to eq :c
+        end
+      end
     end
 
     describe '#can_transition?' do
