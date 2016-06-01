@@ -31,7 +31,7 @@ module EndState
 
     def failed(error, message)
       return false unless mode == :hard
-      fail error, "The transition to #{state} was #{message}: #{object.failure_messages.join(', ')}"
+      Kernel.fail error, "The transition to #{state} was #{message}: #{object.failure_messages.join(', ')}"
     end
 
     def guard_failed
@@ -43,7 +43,7 @@ module EndState
     end
 
     def params_not_provided(params_list)
-      fail MissingParams, "Missing params: #{params_list.join(',')}"
+      Kernel.fail MissingParams, "Missing params: #{params_list.join(',')}"
     end
 
     def conclude(params={})

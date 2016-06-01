@@ -85,7 +85,7 @@ module EndState
     end
 
     def __sm_invalid_event(event, mode)
-      fail InvalidTransition, "Transition by event: #{event} is invalid." if mode == :hard
+      Kernel.fail InvalidTransition, "Transition by event: #{event} is invalid." if mode == :hard
       :__invalid_event__
     end
 
@@ -103,10 +103,10 @@ module EndState
 
     def __sm_block_transistion(state, mode)
       if self.class.end_states.include? state
-        fail InvalidTransition, "The transition: #{object.state} => #{state} is invalid." if mode == :hard
+        Kernel.fail InvalidTransition, "The transition: #{object.state} => #{state} is invalid." if mode == :hard
         return false
       end
-      fail UnknownState, "The state: #{state} is unknown."
+      Kernel.fail UnknownState, "The state: #{state} is unknown."
     end
 
     def __sm_reset_messages
