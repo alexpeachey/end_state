@@ -146,10 +146,10 @@ module EndState
           let(:mode) { :soft }
 
           it 'returns false and rolls back the completed concluders and the action' do
+            expect(action_instance).to receive(:rollback).ordered
             expect(concluder3_instance).to_not receive(:rollback)
             expect(concluder2_instance).to receive(:rollback).ordered
             expect(concluder1_instance).to receive(:rollback).ordered
-            expect(action_instance).to receive(:rollback).ordered
 
             expect(transition.call).to be false
           end
@@ -159,10 +159,10 @@ module EndState
           let(:mode) { :hard }
 
           it 'raises ConcluderFailed and rolls back the completed concluders and the action' do
+            expect(action_instance).to receive(:rollback).ordered
             expect(concluder3_instance).to_not receive(:rollback)
             expect(concluder2_instance).to receive(:rollback).ordered
             expect(concluder1_instance).to receive(:rollback).ordered
-            expect(action_instance).to receive(:rollback).ordered
 
             expect{transition.call}.to raise_error(ConcluderFailed, 'The transition to b was rolled back: service failure')
           end
